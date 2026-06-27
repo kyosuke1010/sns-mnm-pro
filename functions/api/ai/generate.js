@@ -10,6 +10,7 @@ import {
 import { buildGenerationPrompt, normalizeGenerationInput, PHASE1_FEATURE_LABELS } from "../../_lib/ai-prompts.js";
 import { outputSchema } from "../../_lib/ai-schemas.js";
 import { evaluateGenerationQuality, retryInstruction } from "../../_lib/ai-quality.js";
+import { understandInput } from "../../_lib/ai-input-understanding-llm.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -29,11 +30,15 @@ export async function onRequestPost({ request, env }) {
     const input = body.input && typeof body.input === "object" ? body.input : {};
     const rawProfile = body.profile && typeof body.profile === "object" ? body.profile : {};
     const profile = sanitizeProfileForGeneration(rawProfile);
-    const context = normalizeGenerationInput(feature, input, profile);
     const model = modelConfig(settings.modelMode, env);
+    // Understand the input with a single LLM pass (regex fallback on failure),
+    // then reuse that understanding for the context and every prompt build.
+    const { understanding } = await understandInput({ apiKey: settings.apiKey, model, feature, input, profile });
+    const genOptions = { inputUnderstanding: understanding };
+    const context = normalizeGenerationInput(feature, input, profile, genOptions);
     const schema = outputSchema(feature);
     const maxOutputTokens = outputTokenBudget(feature, input);
-    const firstPrompt = buildGenerationPrompt(feature, input, profile);
+    const firstPrompt = buildGenerationPrompt(feature, input, profile, "", genOptions);
     let { output, quality, attempts } = await runGeneration({
       apiKey: settings.apiKey,
       model,
@@ -44,7 +49,7 @@ export async function onRequestPost({ request, env }) {
     });
 
     if (quality.shouldRetry) {
-      const secondPrompt = buildGenerationPrompt(feature, input, profile, retryInstruction(quality));
+      const secondPrompt = buildGenerationPrompt(feature, input, profile, retryInstruction(quality), genOptions);
       const retry = await runGeneration({
         apiKey: settings.apiKey,
         model,

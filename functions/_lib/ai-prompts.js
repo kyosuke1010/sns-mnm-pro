@@ -12,7 +12,7 @@ export const PHASE1_FEATURE_LABELS = {
   cta: "会話導線設計"
 };
 
-export function normalizeGenerationInput(feature, input = {}, profile = {}) {
+export function normalizeGenerationInput(feature, input = {}, profile = {}, options = {}) {
   const tone = input.tone || profile.tone || "親しみやすい";
   const postType = input.type || input.post_type || input.purpose || profile.purpose || "共感型";
   const toneProfile = resolveToneProfile(tone);
@@ -20,7 +20,7 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}) {
   const platform = normalizePlatform(input.channel || input.platform || profile.channels || "Threads");
   const count = normalizeCount(input.count, feature === "day-generate" ? 3 : (feature === "thread" ? 3 : 3));
   const theme = input.topic || input.theme || input.topics || input.source || input.post || "";
-  const inputUnderstanding = analyzeUserInput(feature, input, profile);
+  const inputUnderstanding = options.inputUnderstanding || analyzeUserInput(feature, input, profile);
 
   return {
     feature,
@@ -64,8 +64,8 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}) {
   };
 }
 
-export function buildGenerationPrompt(feature, input, profile, extraInstruction = "") {
-  const context = normalizeGenerationInput(feature, input, profile);
+export function buildGenerationPrompt(feature, input, profile, extraInstruction = "", options = {}) {
+  const context = normalizeGenerationInput(feature, input, profile, options);
   return [
     commonSystemPrompt(),
     "",
@@ -75,6 +75,8 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     "",
     postTypePrompt(context),
     "",
+    diversityPlanPrompt(feature, context),
+    "",
     fewShotPrompt(feature, context.platform),
     "",
     "USER AND MENU CONTEXT:",
@@ -83,6 +85,64 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     outputContract(feature),
     extraInstruction || ""
   ].filter(Boolean).join("\n");
+}
+
+// Named diversity assignment. Each candidate is given a specific framework,
+// rhythm, and ending so variety comes from explicit assignment, not chance.
+const DIVERSITY_FRAMEWORKS = [
+  "問題提起 → 共感 → 視点転換 → 具体場面 → 自然な問い",
+  "失敗談 → 気づき → 変えた行動 → 今の学び",
+  "比較(伸びない型 / 伸びる型) → 理由 → 今日の改善",
+  "あるある共感 → 原因の言語化 → 小さな一歩",
+  "誤解 → 本質 → 実践ステップ → 軽い保存導線",
+  "場面描写 → 迷い → 気づき → 小さな変化 → 読者への接続"
+];
+const DIVERSITY_RHYTHMS = [
+  "短文中心・余白多め",
+  "短文と中文を交互に混ぜる",
+  "問いかけを途中に差し込む",
+  "結論を先に出し、理由を後ろへ置く",
+  "一文の密度を上げ、無駄な説明を削る"
+];
+const DIVERSITY_ENDINGS = [
+  "読者が状況を話したくなる自然な問いで終える",
+  "後で見返したくなる保存導線で終える",
+  "必要な人だけプロフィール / 固定投稿へ軽く流して終える",
+  "次にやる一歩を一つだけ置いて終える",
+  "静かに言い切り、余白を残して終える"
+];
+
+function diversityCount(feature, context) {
+  if (feature === "rewrite") return 0;
+  if (feature === "cta") return 1;
+  if (feature === "day-generate") return 3;
+  return Math.max(1, Math.min(Number(context.post_count) || 1, 10));
+}
+
+function diversityCandidateLabel(feature, index) {
+  if (feature === "day-generate") return ["朝投稿", "昼投稿", "夜投稿"][index] || `${index + 1}回目`;
+  if (feature === "thread") return index === 0 ? "投稿1" : `リプ欄${index + 1}`;
+  if (feature === "series") return `${index + 1}日目`;
+  return `候補${index + 1}`;
+}
+
+function diversityPlanPrompt(feature, context) {
+  const count = diversityCount(feature, context);
+  if (count <= 0) return "";
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    const label = diversityCandidateLabel(feature, i);
+    const framework = DIVERSITY_FRAMEWORKS[i % DIVERSITY_FRAMEWORKS.length];
+    const rhythm = DIVERSITY_RHYTHMS[(i * 2 + 1) % DIVERSITY_RHYTHMS.length];
+    const ending = DIVERSITY_ENDINGS[(i * 3 + 2) % DIVERSITY_ENDINGS.length];
+    lines.push(`- ${label}: framework=「${framework}」 / rhythm=「${rhythm}」 / ending=「${ending}」`);
+  }
+  return [
+    "DIVERSITY PLAN (型の名指し割当):",
+    "Use the assignment below as the skeleton for each item. Do not reuse the same framework, rhythm, or ending across items.",
+    "Keep the body natural and faithful to input_understanding; the assignment guides structure, not wording.",
+    ...lines
+  ].join("\n");
 }
 
 function commonSystemPrompt() {
