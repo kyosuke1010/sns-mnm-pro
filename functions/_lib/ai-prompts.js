@@ -8,7 +8,8 @@ export const PHASE1_FEATURE_LABELS = {
   "bulk-generate": "一括生成",
   thread: "投稿分割設計",
   series: "投稿シリーズ生成",
-  rewrite: "ブラッシュアップ"
+  rewrite: "ブラッシュアップ",
+  cta: "会話導線設計"
 };
 
 export function normalizeGenerationInput(feature, input = {}, profile = {}) {

@@ -74,7 +74,42 @@ const postItem = {
 export function outputSchema(feature) {
   if (feature === "day-generate") return oneDaySchema();
   if (feature === "rewrite") return brushupSchema();
+  if (feature === "cta") return ctaSchema();
   return aiPostSchema();
+}
+
+function ctaSchema() {
+  const ctaPostItem = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      body: { type: "string" },
+      cta: { type: "string" },
+      cta_type: { type: "string" },
+      aim: { type: "string" },
+      platform_note: { type: "string" },
+      caution_flags: { type: "array", items: { type: "string" } },
+      self_check: selfCheck,
+      quality_score: { type: "number" }
+    },
+    required: [
+      "body", "cta", "cta_type", "aim", "platform_note",
+      "caution_flags", "self_check", "quality_score"
+    ]
+  };
+  return {
+    name: "sns_mnm_cta_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        posts: { type: "array", items: ctaPostItem },
+        generation_notes: { type: "string" },
+        overall_self_check: selfCheck
+      },
+      required: ["posts", "generation_notes", "overall_self_check"]
+    }
+  };
 }
 
 function aiPostSchema() {

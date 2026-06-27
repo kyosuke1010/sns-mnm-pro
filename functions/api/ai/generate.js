@@ -152,6 +152,17 @@ function normalizeGeneratedPosts(feature, input, profile, output, createdAt) {
       createdAt
     }].filter((post) => post.content);
   }
+  if (feature === "cta") {
+    return (output.posts || []).slice(0, 1).map((post) => ({
+      topic: input.theme || input.topic || input.post || "会話導線設計",
+      target,
+      purpose: input.conversationGoal || input.conversation_goal || purpose || "会話導線設計",
+      platform,
+      content: post.body,
+      cta: post.cta || profile.cta || "",
+      createdAt
+    })).filter((post) => post.content);
+  }
   if (feature === "thread" || feature === "series") {
     return (output.posts || []).map((post, index) => ({
       topic: input.theme || post.title || (feature === "thread" ? `投稿${index + 1}` : `${index + 1}日目`),

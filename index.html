@@ -2805,7 +2805,7 @@
       setTimeout(async () => {
         try {
           let output = null;
-          if (["ai-post", "day-generate", "rewrite", "bulk-generate", "thread", "series"].includes(feature)) {
+          if (["ai-post", "day-generate", "rewrite", "bulk-generate", "thread", "series", "cta"].includes(feature)) {
             output = await generateWithServer(feature, input);
           } else {
             output = generator(input);
