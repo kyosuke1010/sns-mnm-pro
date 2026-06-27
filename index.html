@@ -217,6 +217,35 @@
       width: 12px;
       height: 12px;
     }
+    .soon-badge {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      margin-left: auto;
+      color: #bcd2ff;
+      background: rgba(124, 160, 255, .12);
+      border: 1px solid rgba(124, 160, 255, .26);
+      border-radius: 999px;
+      padding: 1px 7px;
+      line-height: 1;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .soon-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: #cfe0ff;
+      background: rgba(124, 160, 255, .10);
+      border: 1px solid rgba(124, 160, 255, .24);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .soon-banner b { color: #e7f0ff; }
     .nav button:hover { transform: translateX(2px); }
     .menu-symbol {
       width: 24px;
@@ -1181,6 +1210,17 @@
       ["設定", ["accounts", "billing", "settings", "guide"]]
     ];
     const proPages = new Set(["series", "thread", "viral", "ab-test", "buzz-pattern", "buzz-research", "best-time", "analytics", "conversion", "score", "winning-patterns"]);
+    // Features backed by the live /api/ai/generate endpoint (Phase 1).
+    const serverAiFeatures = new Set(["ai-post", "day-generate", "bulk-generate", "rewrite", "thread", "series", "cta"]);
+    // Menus whose generation is not wired to a real backend yet. Shown as 準備中.
+    const comingSoonFeatures = new Set(["viral", "ab-test", "buzz-research", "buzz-pattern", "reply", "conversion", "score"]);
+    function isServerAiFeature(feature) {
+      return serverAiFeatures.has(feature);
+    }
+    function isComingSoon(feature) {
+      return comingSoonFeatures.has(feature);
+    }
+    const comingSoonMessage = "この機能は現在準備中です。実機能の提供までもう少しお待ちください。";
 
     function svgIcon(paths) {
       return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
@@ -1467,7 +1507,7 @@
             const classes = `${target === desktopNav ? "" : "menu-row"} ${locked ? "pro-locked" : ""}`.trim();
             const rowClass = classes ? ` class="${classes}"` : "";
             const label = locked ? `<span class="menu-label-inline">${meta[0]}<span class="pro-inline-badge" aria-label="Proプラン限定" title="Proプラン限定">${crownIcon()}<span>Pro</span></span></span>` : `<span>${meta[0]}</span>`;
-            const rightBadge = "";
+            const rightBadge = isComingSoon(page) ? `<span class="soon-badge" aria-label="準備中" title="準備中">準備中</span>` : "";
             return `<button${rowClass} type="button" data-page="${page}"><span class="menu-symbol">${iconFor(page)}</span>${label}${rightBadge}</button>`;
           }).join("")}
         </div>`).join("");
@@ -1491,6 +1531,11 @@
     function trialBlock(feature) {
       if (!aiFeatures[feature]) return "";
       return `<div class="trial-bar" data-trial="${feature}">${trialContent(feature)}</div>`;
+    }
+
+    function comingSoonBanner(page) {
+      if (!isComingSoon(page)) return "";
+      return `<div class="soon-banner"><b>準備中</b><span>この機能は現在準備中です。画面はプレビューとしてご確認いただけます。</span></div>`;
     }
 
     function refreshChrome(page = currentPage()) {
@@ -2759,6 +2804,10 @@
     }
 
     async function generateWithServer(feature, input) {
+      if (!isServerAiFeature(feature)) {
+        // Never call the endpoint for a feature it does not support (avoids a 400).
+        throw new Error(comingSoonMessage);
+      }
       const data = await apiFetchJson("/api/ai/generate", {
         method: "POST",
         body: JSON.stringify({ feature, input, profile: safeProfileForGeneration(state.profile) })
@@ -2774,6 +2823,11 @@
     }
 
     function useAiFeature(feature, resultTarget, generator) {
+      if (isComingSoon(feature)) {
+        showResult(resultTarget, comingSoonMessage, true);
+        showToast("この機能は準備中です");
+        return;
+      }
       if (isPreviewMode()) {
         blockPreviewAction(resultTarget);
         return;
@@ -2805,7 +2859,7 @@
       setTimeout(async () => {
         try {
           let output = null;
-          if (["ai-post", "day-generate", "rewrite", "bulk-generate", "thread", "series", "cta"].includes(feature)) {
+          if (isServerAiFeature(feature)) {
             output = await generateWithServer(feature, input);
           } else {
             output = generator(input);
@@ -2820,7 +2874,7 @@
             target.dataset.copyText = recordBodyTextFromChildren(generatedRecord.children, generatedRecord.text);
             generatedResultCache.set(resultTarget, generatedRecord);
           }
-          if (["ai-post", "day-generate", "rewrite", "bulk-generate", "thread", "series", "cta"].includes(feature)) {
+          if (isServerAiFeature(feature)) {
             showStructuredResult(resultTarget, renderGeneratedResultCardSet(generatedRecord));
           } else {
             showResult(resultTarget, output.text);
@@ -3325,6 +3379,7 @@
       return `<section class="page active"><div class="page-shell">
         <section class="panel">
           <div class="panel-head"><div><h2>${meta[0]}</h2><p>${meta[1]}</p></div><span class="menu-symbol">${iconFor(page)}</span></div>
+          ${comingSoonBanner(page)}
           ${trialBlock(page)}
           ${apiWarning()}
           <div class="form-grid" id="${page}Form">${formHtml}</div>
@@ -3547,6 +3602,7 @@
     function conversionPage() {
       return `<section class="page active"><div class="page-shell">
         <section class="panel" id="conversionForm"><div class="panel-head"><div><h2>申込導線レポート</h2><p>返信・補足案内・URL誘導・申込までの流れを可視化します。</p></div></div>
+          ${comingSoonBanner("conversion")}
           <div class="form-grid">
             <label>投稿文<textarea name="post" placeholder="対象投稿文"></textarea></label>
             <label>返信数<input name="replies" value="32"></label>
@@ -3563,6 +3619,7 @@
     function scorePage() {
       return `<section class="page active"><div class="page-shell">
         <section class="panel" id="scoreForm"><div class="panel-head"><div><h2>見込み客スコア</h2><p>返信内容から温度感、次の返信文、押しすぎ注意度を診断します。</p></div></div>
+          ${comingSoonBanner("score")}
           <div class="form-grid"><label>相手の返信内容<textarea name="reply"></textarea></label><label>こちらの投稿文<textarea name="post"></textarea></label><label>案内した商品または特典<input name="product" value="${esc(state.profile.product)}"></label></div>
           <div class="actions"><button class="primary" type="button" id="scoreBtn">スコア診断</button></div>
           <div class="result-box" id="scoreResult">見込み客スコア、温度感、次に送るべき返信文、押しすぎ注意度を表示します。</div>
@@ -3573,6 +3630,7 @@
     function replyPage() {
       return `<section class="page active"><div class="page-shell">
         <section class="panel" id="replyForm"><div class="panel-head"><div><h2>返信 / DM導線</h2><p>投稿後に送る返信文とDM案内を作成します。</p></div></div>
+          ${comingSoonBanner("reply")}
           <div class="form-grid"><label>投稿文<textarea name="post"></textarea></label><label>相手の反応<textarea name="reaction"></textarea></label><label>案内したい内容<input name="offer" value="${esc(state.profile.product)}"></label><label>返信トーン<select name="tone"><option>自然</option><option>丁寧</option><option>短文</option></select></label></div>
           <div class="actions"><button class="primary" type="button" id="replyBtn">返信文を作成</button></div>
           <div class="result-box" id="replyResult">返信文、DM案内、押しすぎない次の一言を表示します。</div>
@@ -4613,11 +4671,11 @@
       const csvBtn = document.querySelector("#csvBtn");
       if (csvBtn) csvBtn.addEventListener("click", () => copyText("current,previous,saves,replies,posts\n12480,10520,1264,148,28"));
       const conversionBtn = document.querySelector("#conversionBtn");
-      if (conversionBtn) conversionBtn.addEventListener("click", () => showResult("#conversionResult", "導線の詰まりポイント: URLクリック前\n改善案: 補足案内のあとに一言で次の行動を案内\n次に送るべき返信文: 今いちばん詰まっているところを一言で教えてもらえれば、次の見直しポイントを絞れます。\n投稿末尾の改善案: キーワード返信ではなく、自然に話せる問いへ弱める"));
+      if (conversionBtn) conversionBtn.addEventListener("click", () => { showResult("#conversionResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
       const scoreBtn = document.querySelector("#scoreBtn");
-      if (scoreBtn) scoreBtn.addEventListener("click", () => showResult("#scoreResult", "見込み客スコア: 82\n温度感: 高い\n次に送るべき返信文: ありがとうございます。今の状況を1つだけ教えてください。\n押しすぎ注意度: 中"));
+      if (scoreBtn) scoreBtn.addEventListener("click", () => { showResult("#scoreResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
       const replyBtn = document.querySelector("#replyBtn");
-      if (replyBtn) replyBtn.addEventListener("click", () => showResult("#replyResult", "返信文:\nありがとうございます。今の運用で一番詰まっているのは、投稿作成・反応後の案内・申込導線のどれですか？\n\nDM案内:\n必要なら、現在の投稿導線を見ながら改善ポイントを整理できます。"));
+      if (replyBtn) replyBtn.addEventListener("click", () => { showResult("#replyResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
       const addSchedule = document.querySelector("#addScheduleBtn");
       if (addSchedule) addSchedule.addEventListener("click", () => {
         if (isPreviewMode()) return blockPreviewAction();
