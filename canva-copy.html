@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>チャッピーに渡す Canva依頼文</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #061017;
+      --panel: #071426;
+      --line: #244052;
+      --text: #f7fbff;
+      --muted: #a8bad0;
+      --primary: #13bfa8;
+      --blue: #2477d4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      background:
+        linear-gradient(105deg, rgba(19,214,178,.28), rgba(36,119,212,.24), rgba(62,67,220,.22)),
+        var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    h1 {
+      font-size: 24px;
+      line-height: 1.25;
+      margin: 10px 0 0;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    button,
+    a.button {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(105deg, var(--primary), var(--blue));
+      color: white;
+      font-weight: 800;
+      font-size: 15px;
+      text-decoration: none;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+    a.button.secondary {
+      background: var(--panel);
+    }
+    textarea {
+      width: 100%;
+      min-height: 62vh;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(7, 20, 38, .92);
+      color: var(--text);
+      padding: 14px;
+      font: 14px/1.65 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 480px) {
+      body { padding: 14px; }
+      .actions { grid-template-columns: 1fr; }
+      textarea { min-height: 58vh; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>チャッピーに渡す Canva依頼文</h1>
+    <p>下の本文をコピーして、チャッピーに貼ってください。コピーできない場合は「TXTを開く」から全選択してください。</p>
+    <div class="actions">
+      <button type="button" id="copyBtn">本文をコピー</button>
+      <a class="button secondary" href="./chatgpt-canva-copy-paste.txt">TXTを開く</a>
+    </div>
+    <div class="status" id="status">読み込み中...</div>
+    <textarea id="promptText" readonly></textarea>
+  </main>
+  <script>
+    const textarea = document.querySelector("#promptText");
+    const statusEl = document.querySelector("#status");
+    fetch("./chatgpt-canva-copy-paste.txt", { cache: "no-store" })
+      .then((res) => res.text())
+      .then((text) => {
+        textarea.value = text;
+        statusEl.textContent = "読み込み完了";
+      })
+      .catch(() => {
+        statusEl.textContent = "読み込みに失敗しました。TXTを開いてください。";
+      });
+    document.querySelector("#copyBtn").addEventListener("click", async () => {
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        statusEl.textContent = "コピーしました";
+      } catch {
+        statusEl.textContent = "選択状態にしました。iPhoneのコピー操作を使ってください。";
+      }
+    });
+  </script>
+</body>
+</html>

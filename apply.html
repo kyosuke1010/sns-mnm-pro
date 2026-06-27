@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>お申し込み | SNS MNM-PRO</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --panel: rgba(7, 20, 38, 0.88);
+      --panel-strong: rgba(7, 20, 38, 0.96);
+      --line: rgba(78, 121, 153, 0.32);
+      --text: #f6fbff;
+      --muted: #9ab4cc;
+      --soft: #cfe8ff;
+      --cyan: #20d4c7;
+      --blue: #2e89e8;
+      --violet: #8d6bff;
+      --danger: #ff6d7a;
+      --amber: #ffcf73;
+      font-family: Inter, "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 14% 12%, rgba(32, 212, 199, 0.18), transparent 24%),
+        radial-gradient(circle at 86% 8%, rgba(46, 137, 232, 0.16), transparent 25%),
+        linear-gradient(180deg, #04101c 0%, #061728 44%, #071a2c 100%);
+    }
+    body, p, h1, h2, h3, a, button, input, textarea, select, label, span, strong, li, div {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea, select { font: inherit; }
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 20px 0 28px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 8px 0 18px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand img {
+      width: 176px;
+      max-width: 46vw;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(32, 212, 199, 0.25);
+      background: rgba(9, 24, 40, 0.95);
+      flex: 0 0 auto;
+    }
+    .brand-copy strong {
+      display: block;
+      letter-spacing: 0.08em;
+      font-size: 15px;
+    }
+    .brand-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+      gap: 20px;
+      align-items: stretch;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+      backdrop-filter: blur(12px);
+    }
+    .hero-copy {
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+      align-content: start;
+      min-height: 100%;
+      background:
+        linear-gradient(180deg, rgba(8, 22, 38, 0.82), rgba(8, 22, 38, 0.96)),
+        url("./assets/sns-mnm-pro-sales-hero-20260626.png") center top / cover no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(4, 11, 21, 0.26), rgba(4, 11, 21, 0.72));
+      pointer-events: none;
+    }
+    .hero-copy > * {
+      position: relative;
+      z-index: 1;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      width: fit-content;
+      border-radius: 999px;
+      border: 1px solid rgba(32, 212, 199, 0.3);
+      background: rgba(7, 24, 43, 0.68);
+      color: #dbf8ff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 62px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+    .lead {
+      font-size: 18px;
+      line-height: 1.75;
+      color: var(--soft);
+      max-width: 18em;
+      margin: 0;
+    }
+    .hero-points {
+      display: grid;
+      gap: 10px;
+      margin: 4px 0;
+    }
+    .hero-points div {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #d7eaff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .hero-points div::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      box-shadow: 0 0 0 4px rgba(32, 212, 199, 0.12);
+      flex: 0 0 auto;
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .primary, .ghost {
+      min-height: 50px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 0;
+      display: inline-grid;
+      place-items: center;
+      text-align: center;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .18s ease, opacity .18s ease, border-color .18s ease;
+    }
+    .primary:hover, .ghost:hover { transform: translateY(-1px); }
+    .primary {
+      color: white;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      box-shadow: 0 14px 36px rgba(32, 212, 199, 0.18);
+    }
+    .primary.violet {
+      background: linear-gradient(135deg, var(--violet), var(--blue));
+    }
+    .ghost {
+      color: var(--text);
+      border: 1px solid var(--line);
+      background: rgba(10, 28, 47, 0.78);
+    }
+    .hero-side {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .hero-shot {
+      border-radius: 16px;
+      border: 1px solid rgba(78, 121, 153, 0.28);
+      overflow: hidden;
+      background: rgba(4, 11, 21, 0.72);
+    }
+    .hero-shot img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    .stat {
+      border: 1px solid rgba(78, 121, 153, 0.26);
+      border-radius: 14px;
+      padding: 14px;
+      background: rgba(8, 23, 42, 0.86);
+    }
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .stat strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 30px;
+      line-height: 1;
+    }
+    .stat small {
+      display: block;
+      margin-top: 8px;
+      color: #c7def5;
+      line-height: 1.6;
+    }
+    .section {
+      margin-top: 18px;
+      padding: 22px;
+    }
+    .section-head {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 26px;
+    }
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .pro-menu-block {
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid rgba(141, 107, 255, 0.24);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(30, 23, 60, 0.36), rgba(9, 24, 40, 0.88));
+      display: grid;
+      gap: 14px;
+    }
+    .pro-menu-block h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .pro-menu-block p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .pro-chip-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .pro-chip {
+      border: 1px solid rgba(141, 107, 255, 0.22);
+      border-radius: 12px;
+      background: rgba(12, 22, 42, 0.86);
+      padding: 12px 13px;
+      color: #e5ddff;
+      font-weight: 800;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .feature {
+      border: 1px solid rgba(78, 121, 153, 0.24);
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(9, 24, 40, 0.82);
+      display: grid;
+      gap: 10px;
+    }
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      background: linear-gradient(135deg, rgba(141, 107, 255, 0.24), rgba(46, 137, 232, 0.24));
+      border: 1px solid rgba(141, 107, 255, 0.28);
+    }
+    .feature h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .step {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(78, 121, 153, 0.22);
+      background: rgba(9, 24, 40, 0.78);
+      display: grid;
+      gap: 10px;
+    }
+    .step strong {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #04111d;
+      font-size: 14px;
+    }
+    .step h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .form-section {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .apply-form {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    label {
+      display: grid;
+      gap: 7px;
+      color: #c6dcf1;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    input, textarea, select {
+      width: 100%;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid rgba(78, 121, 153, 0.3);
+      background: #0a1829;
+      color: var(--text);
+      padding: 11px 12px;
+    }
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+    .full { grid-column: 1 / -1; }
+    .checks {
+      display: grid;
+      gap: 10px;
+    }
+    .check {
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      color: #d3e8fb;
+      font-size: 14px;
+      line-height: 1.65;
+      font-weight: 700;
+    }
+    .check input {
+      width: 18px;
+      min-height: 18px;
+      margin-top: 2px;
+      accent-color: var(--cyan);
+    }
+    .notice {
+      border: 1px solid rgba(255, 207, 115, 0.22);
+      border-radius: 14px;
+      background: rgba(255, 207, 115, 0.08);
+      color: #ffe6ae;
+      padding: 12px 14px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .error {
+      color: var(--danger);
+      font-weight: 900;
+      min-height: 22px;
+    }
+    .side-note {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+    .side-note-card {
+      border: 1px solid rgba(78, 121, 153, 0.24);
+      border-radius: 14px;
+      background: rgba(10, 27, 46, 0.82);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+    .side-note-card h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+    .side-note-card p, .side-note-card li {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .side-note-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .thanks {
+      display: none;
+      margin-top: 18px;
+      padding: 22px;
+    }
+    .thanks.active { display: grid; gap: 16px; }
+    .footer {
+      margin-top: 18px;
+      padding: 10px 0 24px;
+      display: grid;
+      gap: 4px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+    .footer a { color: var(--soft); font-weight: 800; }
+    @media (max-width: 1080px) {
+      .hero,
+      .form-section {
+        grid-template-columns: 1fr;
+      }
+      .hero-copy { min-height: 560px; }
+    }
+    @media (max-width: 780px) {
+      .page { width: min(100%, calc(100% - 24px)); }
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+      .top-actions {
+        justify-content: stretch;
+        display: grid;
+      }
+      .brand img {
+        width: 148px;
+        height: 54px;
+      }
+      .hero-copy {
+        min-height: 480px;
+        padding: 22px;
+      }
+      .lead {
+        font-size: 16px;
+        max-width: none;
+      }
+      .feature-grid,
+      .pro-chip-grid,
+      .flow,
+      .form-grid,
+      .hero-stats {
+        grid-template-columns: 1fr;
+      }
+      .section,
+      .apply-form,
+      .hero-side,
+      .side-note,
+      .thanks {
+        padding: 18px;
+      }
+      .cta-row,
+      .top-actions {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <img src="./assets/sns-mnm-pro-logo-20260621.jpg" alt="SNS MNM-PRO">
+        <div class="brand-copy">
+          <strong>SNS MNM-PRO</strong>
+          <span>KOUCHA-LAB.COM</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="ghost" href="/login">ログイン</a>
+        <a class="ghost" href="/?page=billing">プランを見る</a>
+        <a class="primary violet" href="#apply-form">今すぐ申し込む</a>
+      </div>
+    </header>
+
+    <section class="hero">
+      <section class="hero-copy panel">
+        <div class="eyebrow">AI × Threads運用を仕組み化</div>
+        <h1>投稿ネタ切れを、<br>今日で終わらせる。</h1>
+        <p class="lead">投稿作成、分析、予約メモ、運用管理までをひとつにまとめた、Threads運用者向けのAI支援ツールです。</p>
+        <div class="hero-points">
+          <div>AI投稿文生成で、毎日の投稿作成を短縮</div>
+          <div>Liteプランでもフォロワー数管理に対応</div>
+          <div>Proプランでは保存数・返信数・勝ちパターン分析まで対応</div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span>できること</span>
+            <strong>投稿生成</strong>
+            <small>AI投稿文生成、1日分生成、リライト、投稿管理</small>
+          </div>
+          <div class="stat">
+            <span>Liteプラン</span>
+            <strong>3,980円</strong>
+            <small>Threads API連携とフォロワー数管理を利用可能</small>
+          </div>
+          <div class="stat">
+            <span>Proプラン</span>
+            <strong>5,200円</strong>
+            <small>保存・返信・勝ちパターン辞書などの高度分析に対応</small>
+          </div>
+          <div class="stat">
+            <span>無料トライアル</span>
+            <strong>3日間</strong>
+            <small>まずは購入前に画面と導線を試せます</small>
+          </div>
+        </div>
+        <div class="cta-row">
+          <a class="primary violet" href="#apply-form">無料トライアルに申し込む</a>
+        </div>
+      </section>
+
+      <aside class="hero-side panel">
+        <div class="hero-shot">
+          <img src="./assets/sns-mnm-pro-sales-side-20260626.png" alt="SNS MNM-PRO サンプルイメージ">
+        </div>
+      </aside>
+    </section>
+
+    <section class="section panel">
+      <div class="section-head">
+        <h2>このツールでできること</h2>
+        <p>投稿を作るだけでなく、運用の型を貯めて、次の投稿や次の案内につなげるところまでをまとめています。</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature">
+          <div class="feature-icon">AI</div>
+          <h3>AI投稿文生成</h3>
+          <p>トピックやキーワードから、Threads向け・X向けの投稿文をその場で作成します。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">日</div>
+          <h3>1日分生成</h3>
+          <p>朝・昼・夜の流れで、共感から案内までつながる3投稿をまとめて作成できます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">管</div>
+          <h3>投稿管理</h3>
+          <p>生成した投稿を下書き、予約メモ、投稿済みとして整理し、あとから再利用できます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">増</div>
+          <h3>フォロワー数管理</h3>
+          <p>LiteプランでもThreads API連携により、前回同期からの増減を分かりやすく確認できます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">分</div>
+          <h3>保存・反応分析</h3>
+          <p>Proプランでは保存数、返信数、投稿ごとの反応を見ながら改善ポイントを整理できます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">型</div>
+          <h3>勝ちパターン辞書</h3>
+          <p>反応が良かった投稿の型を保存し、次回以降のAI生成に参照できます。</p>
+        </article>
+      </div>
+      <div class="pro-menu-block">
+        <h3>Pro限定メニュー</h3>
+        <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。</p>
+        <div class="pro-chip-grid">
+          <div class="pro-chip">投稿シリーズ生成</div>
+          <div class="pro-chip">スレッド生成</div>
+          <div class="pro-chip">投稿前スコア診断</div>
+          <div class="pro-chip">投稿AB比較</div>
+          <div class="pro-chip">バズパターン分析</div>
+          <div class="pro-chip">伸びるテーマ候補</div>
+          <div class="pro-chip">おすすめ投稿時間</div>
+          <div class="pro-chip">保存・フォロワー分析</div>
+          <div class="pro-chip">申込導線レポート</div>
+          <div class="pro-chip">見込み客スコア</div>
+          <div class="pro-chip">勝ちパターン辞書</div>
+          <div class="pro-chip">Threads API連携による高度分析</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section panel">
+      <div class="section-head">
+        <h2>お申し込み後の流れ</h2>
+        <p>公開ページからの申し込み、決済確認、ライセンス発行、初回登録までの流れをシンプルにしています。</p>
+      </div>
+      <div class="flow">
+        <article class="step">
+          <strong>1</strong>
+          <h3>申し込む</h3>
+          <p>下のフォームから、お名前・メールアドレス・希望プランを送信します。</p>
+        </article>
+        <article class="step">
+          <strong>2</strong>
+          <h3>決済へ進む</h3>
+          <p>送信後に決済ページへ進みます。プランごとに案内リンクを切り替えます。</p>
+        </article>
+        <article class="step">
+          <strong>3</strong>
+          <h3>ライセンス発行</h3>
+          <p>決済確認後、管理側でライセンスキーを発行し、メールでご案内します。</p>
+        </article>
+        <article class="step">
+          <strong>4</strong>
+          <h3>初回登録</h3>
+          <p>購入後はログイン画面の初回登録タブから、ライセンスキーで利用開始できます。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="form-section" id="apply-form">
+      <section class="apply-form panel">
+        <div class="section-head">
+          <h2>お申し込みフォーム</h2>
+          <p>決済前に、お名前、決済名義、メールアドレス、希望プランを確認します。決済確認後、ライセンスキーを手動発行します。</p>
+        </div>
+
+        <div class="form-grid" id="applyForm">
+          <label>お名前<input name="name" required placeholder="紅茶王子 太郎"></label>
+          <label>決済名義<input name="paymentName" required placeholder="TARO YAMADA"></label>
+          <label>メールアドレス<input name="email" type="email" required placeholder="you@example.com"></label>
+          <label>メールアドレス確認<input name="emailConfirm" type="email" required placeholder="you@example.com"></label>
+          <label>希望プラン<select name="plan" required>
+            <option value="無料トライアル">無料トライアル</option>
+            <option value="Liteプラン">Liteプラン 3,980円/月</option>
+            <option value="Proプラン">Proプラン 5,200円/月</option>
+          </select></label>
+          <label>利用目的<select name="purpose" id="purpose" required>
+            <option value="Threads投稿を効率化したい">Threads投稿を効率化したい</option>
+            <option value="X向け投稿文も作りたい">X向け投稿文も作りたい</option>
+            <option value="返信導線を作りたい">返信導線を作りたい</option>
+            <option value="アフィリエイト投稿に使いたい">アフィリエイト投稿に使いたい</option>
+            <option value="自分の商品・サービスの案内に使いたい">自分の商品・サービスの案内に使いたい</option>
+            <option value="SNS運用のテストに使いたい">SNS運用のテストに使いたい</option>
+            <option value="その他">その他</option>
+          </select></label>
+          <label>ThreadsアカウントURL<input name="threadsUrl" placeholder="https://www.threads.net/@..."></label>
+          <label>XアカウントURL<input name="xUrl" placeholder="https://x.com/..."></label>
+          <label>紹介者または流入元<input name="referral" placeholder="SNS / 知人紹介 など"></label>
+          <label class="full">備考<textarea name="note" placeholder="相談しておきたいことがあれば入力してください"></textarea></label>
+          <label class="full" id="otherPurposeWrap" hidden>その他の利用目的<textarea name="otherPurpose" placeholder="使い方や利用目的を自由に記入してください"></textarea></label>
+        </div>
+
+        <div class="checks">
+          <label class="check"><input type="checkbox" required>AI生成には、ご自身のOpenAI APIキーが必要であることを理解しました</label>
+          <label class="check"><input type="checkbox" required>OpenAI API利用料は、自身のOpenAIアカウントに基づき発生することを理解しました</label>
+          <label class="check"><input type="checkbox" required>初期版ではThreads/Xへの完全自動投稿には対応していないことを理解しました</label>
+          <label class="check"><input type="checkbox" required>決済確認後、管理者がライセンスキーを手動発行することを理解しました</label>
+        </div>
+
+        <div class="notice">Stripe Payment Links は後から設定できます。今は公開導線と申し込み取得の形を先に固めています。実運用ではここから決済ページへ案内します。</div>
+        <div class="error" id="error"></div>
+        <div class="cta-row">
+          <button class="primary violet" id="submitBtn" type="button">お申し込み内容を送信</button>
+          <a class="ghost" href="/login">すでに購入済みの方はこちら</a>
+        </div>
+      </section>
+
+      <aside class="side-note panel">
+        <div class="side-note-card">
+          <h3>こんな方に向いています</h3>
+          <ul>
+            <li>投稿ネタが毎日途切れてしまう</li>
+            <li>文章は苦手でも運用を仕組み化したい</li>
+            <li>Threads投稿と導線管理を一つにまとめたい</li>
+            <li>まずはLiteプランでフォロワー数管理から始めたい</li>
+          </ul>
+        </div>
+        <div class="side-note-card">
+          <h3>プランの違い</h3>
+          <p><strong>Liteプラン</strong> は投稿生成、投稿管理、Threads API連携、フォロワー数管理が中心です。</p>
+          <p><strong>Proプラン</strong> は保存・返信・投稿別反応・勝ちパターン辞書などの分析機能まで利用できます。</p>
+        </div>
+        <div class="side-note-card">
+          <h3>お問い合わせ</h3>
+          <p>support@koucha-lab.com</p>
+          <p>導入前の相談やプランの違いが分からない場合も、このメールで受け付けます。</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="thanks panel" id="thanksPanel">
+      <div class="section-head">
+        <h2>お申し込みありがとうございます</h2>
+        <p>お申し込み内容を受け付けました。続けて決済ページへお進みください。決済完了後、内容を確認のうえ、ライセンスキーをメールでお送りします。通常、確認後24時間以内にご案内します。</p>
+      </div>
+      <div class="cta-row">
+        <a class="primary violet" id="paymentLink" href="#">決済ページへ進む</a>
+        <a class="ghost" href="/?page=billing">プラン一覧へ戻る</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>© KOUCHA-LAB</div>
+      <div>お問い合わせ：<a href="mailto:support@koucha-lab.com">support@koucha-lab.com</a></div>
+      <div><a href="/legal">特定商取引法に基づく表記</a> ・ <a href="/terms">利用規約</a> ・ <a href="/privacy">プライバシーポリシー</a> ・ <a href="/data-deletion">データ削除</a></div>
+    </footer>
+  </main>
+
+  <script>
+    const stripeLinks = {
+      "無料トライアル": "#stripe-trial-unset",
+      "Liteプラン": "#stripe-lite-unset",
+      "Proプラン": "#stripe-pro-unset"
+    };
+
+    const params = new URLSearchParams(location.search);
+    const initialPlan = params.get("plan");
+    const planSelect = document.querySelector("[name='plan']");
+    if (initialPlan && planSelect) {
+      [...planSelect.options].forEach((option) => {
+        if (option.value === initialPlan || option.textContent.includes(initialPlan)) {
+          option.selected = true;
+        }
+      });
+    }
+
+    document.querySelector("#purpose")?.addEventListener("change", (event) => {
+      document.querySelector("#otherPurposeWrap").hidden = event.target.value !== "その他";
+    });
+
+    document.querySelector("#submitBtn")?.addEventListener("click", () => {
+      const scope = document.querySelector("#applyForm");
+      const values = Object.fromEntries(
+        [...scope.querySelectorAll("[name]")].map((item) => [item.name, item.value.trim()])
+      );
+      const checks = [...document.querySelectorAll(".checks input")];
+      const error = document.querySelector("#error");
+      error.textContent = "";
+
+      if (!values.name || !values.paymentName || !values.email || !values.emailConfirm || !values.plan || !values.purpose) {
+        error.textContent = "必須項目を入力してください。";
+        return;
+      }
+      if (values.email !== values.emailConfirm) {
+        error.textContent = "メールアドレス確認が一致しません。";
+        return;
+      }
+      if (!checks.every((item) => item.checked)) {
+        error.textContent = "すべての同意チェックを確認してください。";
+        return;
+      }
+
+      localStorage.setItem("sns-mnm-pro-application-demo", JSON.stringify({
+        ...values,
+        createdAt: new Date().toISOString()
+      }));
+
+      document.querySelector("#apply-form").style.display = "none";
+      document.querySelector("#thanksPanel").classList.add("active");
+      document.querySelector("#paymentLink").href = stripeLinks[values.plan] || "#stripe-unset";
+      window.scrollTo({ top: document.querySelector("#thanksPanel").offsetTop - 16, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>

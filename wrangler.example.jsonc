@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sns-mnm-pro",
+  "compatibility_date": "2026-06-21",
+  "pages_build_output_dir": "./",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sns-mnm-pro-prod",
+      "database_id": "f1605539-26e1-4cc5-89e1-ae0b9b54a08c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "SESSION_KV",
+      "id": "f6d42afa334e4e72a0d5961b2faf36dd"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "production",
+    "SUPPORT_EMAIL": "support@koucha-lab.com",
+    "THREADS_LIVE_TEST": "false"
+  }
+}

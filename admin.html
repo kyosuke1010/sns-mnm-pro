@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SNS MNM-PRO Admin</title>
+  <style>
+    :root {
+      --bg: #06111f;
+      --panel: rgba(8, 23, 42, .94);
+      --line: rgba(78, 121, 153, .34);
+      --text: #f6fbff;
+      --soft: #b8d4ec;
+      --muted: #7c93a8;
+      --cyan: #20d4c7;
+      --blue: #2e89e8;
+      --violet: #8d6bff;
+      --green: #49d17f;
+      --amber: #ffbf47;
+      --danger: #ff6d7a;
+      --radius: 14px;
+      color-scheme: dark;
+      font-family: Inter, "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(2, 12, 25, .76), rgba(2, 12, 25, .96)),
+        url("./assets/sns-mnm-pro-logo-20260621.jpg") center top / cover fixed no-repeat,
+        var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    a, button, input, textarea, select, p, h1, h2, h3, h4, span, strong, label, div, li, td, th {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      white-space: normal;
+    }
+    button, input, textarea, select { font: inherit; }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+      transition: grid-template-columns .28s ease;
+    }
+    body.admin-sidebar-collapsed .layout {
+      grid-template-columns: 82px minmax(0, 1fr);
+    }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 18px 14px;
+      border-right: 1px solid var(--line);
+      background: rgba(4, 9, 18, .96);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: auto;
+      z-index: 30;
+    }
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      flex: 0 0 auto;
+    }
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .brand strong {
+      display: block;
+      font-size: 15px;
+      letter-spacing: .08em;
+    }
+    .brand span {
+      display: block;
+      margin-top: 3px;
+      font-size: 10px;
+      letter-spacing: .16em;
+      color: var(--soft);
+    }
+    .menu-toggle, .drawer-close {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(10, 29, 50, .82);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .drawer-close { display: none; }
+    .nav-title {
+      color: #66768a;
+      font-size: 12px;
+      font-weight: 900;
+      margin: 10px 8px 6px;
+    }
+    .nav {
+      display: grid;
+      gap: 6px;
+    }
+    .nav button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #aab7c6;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .nav button:hover,
+    .nav button.active {
+      color: #fff;
+      background: rgba(141, 107, 255, .16);
+    }
+    .icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, .06);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    body.admin-sidebar-collapsed .brand > div:not(.brand-mark),
+    body.admin-sidebar-collapsed .nav-title,
+    body.admin-sidebar-collapsed .sidebar-note {
+      display: none;
+    }
+    body.admin-sidebar-collapsed .nav button {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      padding: 10px 8px;
+      font-size: 0;
+      gap: 0;
+    }
+    .sidebar-note {
+      border: 1px solid rgba(255, 191, 71, .22);
+      border-radius: 12px;
+      background: rgba(255, 191, 71, .08);
+      color: #ffd98c;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .52);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease;
+      z-index: 20;
+    }
+    body.admin-menu-open .scrim {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .workspace {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+    .topbar {
+      min-height: 70px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(5, 17, 31, .86);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .topbar p {
+      margin: 4px 0 0;
+      color: var(--soft);
+      font-size: 13px;
+    }
+    main {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      max-width: 1180px;
+      width: 100%;
+    }
+    .panel, .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 18px 70px rgba(0,0,0,.38);
+    }
+    .panel { padding: 18px; }
+    .banner {
+      border: 1px solid rgba(32, 212, 199, .34);
+      background: linear-gradient(135deg, rgba(32, 212, 199, .14), rgba(141, 107, 255, .14));
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .banner h2, .panel h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    .muted, .panel p, .banner p {
+      margin: 6px 0 0;
+      color: var(--soft);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .primary, .ghost, .small {
+      min-height: 38px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(10, 29, 50, .82);
+      color: var(--text);
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-grid;
+      place-items: center;
+    }
+    .primary {
+      border: 0;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+    }
+    .small {
+      min-height: 32px;
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(7, 17, 30, .84);
+      padding: 14px;
+    }
+    .metric span {
+      color: var(--soft);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 28px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--soft);
+      font-size: 13px;
+    }
+    input, textarea, select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(169, 201, 232, .18);
+      border-radius: 10px;
+      background: rgba(4, 12, 22, .72);
+      color: var(--text);
+      padding: 10px 12px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(169, 201, 232, .18);
+      border-radius: 999px;
+      background: rgba(8, 23, 42, .78);
+      color: var(--soft);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 5px 9px;
+      white-space: nowrap;
+    }
+    .pill.green { color: #9ff0be; border-color: rgba(73, 209, 127, .34); }
+    .pill.amber { color: #ffd98c; border-color: rgba(255, 191, 71, .34); }
+    .pill.red { color: #ffb4bd; border-color: rgba(255, 109, 122, .34); }
+    .table-wrap { overflow: auto; }
+    table {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid rgba(169, 201, 232, .12);
+      padding: 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--soft);
+      font-size: 12px;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .license-issue-list {
+      display: grid;
+      gap: 14px;
+    }
+    .license-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(7, 17, 30, .9);
+      padding: 15px;
+      display: grid;
+      gap: 12px;
+    }
+    .license-stage {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .license-stage.secondary {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .kv {
+      border: 1px solid rgba(169, 201, 232, .12);
+      border-radius: 10px;
+      background: rgba(4, 12, 22, .42);
+      padding: 9px;
+    }
+    .kv span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .kv strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 13px;
+    }
+    .license-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .view { display: none; }
+    .view.active { display: grid; gap: 16px; }
+    .admin-footer {
+      max-width: 1180px;
+      padding: 0 22px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      text-align: center;
+      display: grid;
+      gap: 3px;
+    }
+    .admin-footer a {
+      color: var(--soft);
+      font-weight: 900;
+      text-decoration: none;
+    }
+    .access-denied {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+    .access-denied .panel {
+      width: min(100%, 520px);
+      text-align: center;
+    }
+    @media (max-width: 980px) {
+      .layout { display: block; }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(84vw, 320px);
+        height: 100dvh;
+        transform: translateX(-108%);
+        transition: transform .34s cubic-bezier(.2, .8, .2, 1);
+      }
+      body.admin-menu-open .sidebar { transform: translateX(0); }
+      .drawer-close { display: grid; }
+      .topbar {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        align-items: center;
+      }
+      .topbar .actions {
+        grid-column: 1 / -1;
+        width: 100%;
+        flex-direction: column;
+      }
+      .banner {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .banner .actions,
+      .actions {
+        align-items: stretch;
+      }
+      .actions > * { width: 100%; }
+      main { padding: 18px; }
+      .grid, .form-grid { grid-template-columns: 1fr; }
+      .license-stage, .license-stage.secondary { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 360px) {
+      .license-stage, .license-stage.secondary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="guard"></div>
+  <div class="layout" id="adminApp" hidden>
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <div class="brand">
+          <div class="brand-mark"><img src="./assets/sns-mnm-pro-sidebar-mark-20260622.jpg" alt=""></div>
+          <div><strong>SNS MNM-PRO</strong><span>ADMIN</span></div>
+        </div>
+        <button class="drawer-close" id="adminMenuClose" type="button" aria-label="Close menu">×</button>
+      </div>
+      <nav class="nav" aria-label="Admin menu">
+        <span class="nav-title">Admin Menu</span>
+        <button class="active" data-view="dashboard"><span class="icon">DB</span>管理ダッシュボード</button>
+        <button data-view="applications"><span class="icon">AP</span>申し込み管理</button>
+        <button data-view="revenue"><span class="icon">RV</span>売上管理</button>
+        <button data-view="users"><span class="icon">US</span>ユーザー管理</button>
+        <button data-view="licenses"><span class="icon">LC</span>ライセンス管理</button>
+        <button data-view="plans"><span class="icon">PL</span>プラン管理</button>
+        <button data-view="usage"><span class="icon">AI</span>利用状況</button>
+        <button data-view="connections"><span class="icon">CN</span>連携状態</button>
+        <button data-view="api-tests"><span class="icon">TS</span>Threads/AI設定</button>
+        <button data-view="notices"><span class="icon">NT</span>お知らせ・運用メモ</button>
+        <button data-view="admin-settings"><span class="icon">ST</span>管理者設定</button>
+      </nav>
+      <div class="sidebar-note">管理者専用画面です。購入者には表示しません。</div>
+    </aside>
+    <div class="scrim" id="adminScrim"></div>
+
+    <section class="workspace">
+      <header class="topbar">
+        <button class="menu-toggle" id="adminMenuBtn" type="button" aria-label="Collapse admin menu">≡</button>
+        <div>
+          <h1 id="viewTitle">管理ダッシュボード</h1>
+          <p>管理者フルアクセス / ライセンスと購入者導線を管理</p>
+        </div>
+        <div class="actions">
+          <a class="ghost" href="/admin/logout/">管理者ログアウト</a>
+          <a class="ghost" href="/index.html?admin_view=1&page=dashboard">通常画面へ戻る</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="banner">
+          <div>
+            <h2>管理者フルアクセス</h2>
+            <p>ライセンス発行、購入者一覧、Threads設定の確認をここで行います。</p>
+          </div>
+          <div class="actions">
+            <span class="pill green">role: admin</span>
+            <span class="pill green">plan: admin_full</span>
+          </div>
+        </section>
+
+        <section class="view active" id="dashboard">
+          <section class="panel">
+            <h2>管理ダッシュボード</h2>
+            <p>ユーザー数とライセンス数は実データを反映します。</p>
+            <div class="grid">
+              <div class="metric"><span>登録ユーザー数</span><strong id="metricUsers">-</strong></div>
+              <div class="metric"><span>ライセンス発行数</span><strong id="metricLicenses">-</strong></div>
+              <div class="metric"><span>Liteプラン</span><strong id="metricLite">-</strong></div>
+              <div class="metric"><span>Proプラン</span><strong id="metricPro">-</strong></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="applications">
+          <section class="panel">
+            <h2>申し込み管理</h2>
+            <p>初期版では一覧UIのみです。今後、申込フォームとの連携先として使用します。</p>
+          </section>
+        </section>
+
+        <section class="view" id="revenue">
+          <section class="panel">
+            <h2>売上管理</h2>
+            <p>初期版では売上カードは簡易表示です。ライセンス発行状況の確認を優先しています。</p>
+            <div class="grid">
+              <div class="metric"><span>総売上</span><strong>0</strong></div>
+              <div class="metric"><span>今月売上</span><strong>0</strong></div>
+              <div class="metric"><span>未確認決済</span><strong>0</strong></div>
+              <div class="metric"><span>ライセンス未発行</span><strong>0</strong></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="users">
+          <section class="panel">
+            <h2>ユーザー管理</h2>
+            <p>ライセンス発行時に作成・紐付けされた購入者がここへ表示されます。</p>
+          </section>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ユーザーID</th><th>表示名</th><th>メール</th><th>ロール</th><th>現在プラン</th><th>ライセンス</th><th>登録日</th><th>最終ログイン</th><th>ステータス</th><th>操作</th></tr></thead>
+              <tbody id="userRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="licenses">
+          <section class="panel">
+            <h2>ライセンス管理</h2>
+            <p>新規ライセンス発行時に、購入者ユーザー作成または既存ユーザー紐付けを同時に行います。</p>
+            <div class="form-grid" id="licenseIssueForm">
+              <label>購入者名<input id="licenseBuyerName" placeholder="紅茶王子 テスト"></label>
+              <label>決済名義<input id="licensePaymentName" placeholder="KOUCHA LAB"></label>
+              <label>メールアドレス<input id="licenseEmail" type="email" placeholder="buyer@example.com"></label>
+              <label>購入プラン<select id="licensePlan"><option value="trial">無料トライアル</option><option value="lite">Liteプラン</option><option value="pro">Proプラン</option><option value="admin_full">管理者フルアクセス</option></select></label>
+              <label>Stripe決済ID<input id="licenseStripePaymentId" placeholder="pi_... / cs_..."></label>
+              <label>有効期限<input id="licenseExpiresAt" type="date" value="2026-07-30"></label>
+              <label style="grid-column:1 / -1;">管理メモ<input id="licenseMemo" placeholder="初回購入 / 手動確認 / キャンペーンメモ"></label>
+            </div>
+            <div class="actions">
+              <button class="primary" type="button" id="issueLicenseBtn">新規ライセンス発行</button>
+              <button class="ghost" type="button" id="copyLicenseBtn">発行されたキーをコピー</button>
+              <span class="pill" id="issuedKey">SNS-MNM-XXXX-XXXX-XXXX</span>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>ライセンス発行管理</h2>
+            <p>直近の発行ライセンスをカードで表示します。</p>
+            <div class="license-issue-list" id="licenseIssueCards"></div>
+          </section>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ライセンスキー</th><th>紐づくメール</th><th>プラン</th><th>発行日</th><th>有効期限</th><th>使用状態</th><th>メモ</th><th>操作</th></tr></thead>
+              <tbody id="licenseRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="plans">
+          <section class="panel">
+            <h2>プラン管理</h2>
+            <p>ユーザーの現在プランと無料トライアル状態を確認します。</p>
+          </section>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ユーザー</th><th>現在プラン</th><th>表示中プラン</th><th>無料トライアル</th><th>状態</th><th>操作</th></tr></thead>
+              <tbody id="planRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="view" id="usage">
+          <section class="panel">
+            <h2>利用状況</h2>
+            <p>後続で実データ連携します。初期版では管理対象の導線だけ残します。</p>
+          </section>
+        </section>
+
+        <section class="view" id="connections">
+          <section class="panel">
+            <h2>連携状態</h2>
+            <p>購入者側では Threads API 連携設定と Threadsと連携 ボタンが通常画面に表示されます。</p>
+          </section>
+        </section>
+
+        <section class="view" id="api-tests">
+          <section class="panel">
+            <h2>Threads / AI 設定</h2>
+            <p>Meta App ID と Threads App Secret は管理者側のみで管理します。購入者には手入力欄を出しません。</p>
+            <div class="form-grid" id="threadsAppSettingsForm">
+              <label>Meta App ID<input name="meta_app_id" id="threadsAdminMetaAppId" placeholder="123456789012345"></label>
+              <label>Threads App Secret<input name="meta_app_secret" id="threadsAdminMetaAppSecret" type="password" placeholder="app secret"></label>
+              <label>Scope<input name="scopes" id="threadsAdminScopes" value="threads_basic,threads_content_publish"></label>
+              <label style="grid-column:1 / -1;">Redirect URI<input name="redirect_uri" id="threadsAdminRedirectUri" value="https://sns-mnm-pro-prototype.pages.dev/api/threads/oauth/callback"></label>
+            </div>
+            <div class="actions">
+              <button class="primary" type="button" id="saveThreadsAppSettingsBtn">保存</button>
+              <button class="ghost" type="button" id="reloadThreadsAppSettingsBtn">再取得</button>
+              <span class="pill" id="threadsAppConfiguredPill">未設定</span>
+              <span class="pill" id="threadsAdminSecretLast4">未保存</span>
+            </div>
+            <p class="muted" id="threadsAppSettingsResult">Threads OAuth setting will be loaded.</p>
+          </section>
+        </section>
+
+        <section class="view" id="notices">
+          <section class="panel">
+            <h2>お知らせ・運用メモ</h2>
+            <p>この機能は現在準備中です。先にライセンス発行と購入者導線を利用してください。</p>
+          </section>
+        </section>
+
+        <section class="view" id="admin-settings">
+          <section class="panel">
+            <h2>管理者設定</h2>
+            <p>このアカウントは管理者フルアクセスです。無料トライアル制限は適用されません。</p>
+          </section>
+        </section>
+      </main>
+
+      <footer class="admin-footer">
+        <div>© KOUCHA-LAB</div>
+        <div>お問い合わせ：<a href="mailto:support@koucha-lab.com">support@koucha-lab.com</a></div>
+        <div><a href="/legal">特定商取引法に基づく表記</a> ・ <a href="/apply.html">お申し込み</a></div>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    const guard = document.querySelector("#guard");
+    const app = document.querySelector("#adminApp");
+    const adminMenuBtn = document.querySelector("#adminMenuBtn");
+    const adminMenuClose = document.querySelector("#adminMenuClose");
+    const adminScrim = document.querySelector("#adminScrim");
+    const adminMobileQuery = window.matchMedia("(max-width: 980px)");
+    const viewTitle = document.querySelector("#viewTitle");
+
+    function closeAdminMenu() {
+      document.body.classList.remove("admin-menu-open");
+    }
+
+    function toggleAdminSidebar() {
+      if (adminMobileQuery.matches) {
+        document.body.classList.toggle("admin-menu-open");
+        return;
+      }
+      document.body.classList.toggle("admin-sidebar-collapsed");
+      const collapsed = document.body.classList.contains("admin-sidebar-collapsed");
+      adminMenuBtn?.setAttribute("aria-label", collapsed ? "Expand admin menu" : "Collapse admin menu");
+      adminMenuBtn?.setAttribute("aria-expanded", String(!collapsed));
+    }
+
+    function resetResponsiveAdminMenu() {
+      closeAdminMenu();
+      if (adminMobileQuery.matches) {
+        document.body.classList.remove("admin-sidebar-collapsed");
+        adminMenuBtn?.setAttribute("aria-label", "Open admin menu");
+        adminMenuBtn?.removeAttribute("aria-expanded");
+      } else {
+        const collapsed = document.body.classList.contains("admin-sidebar-collapsed");
+        adminMenuBtn?.setAttribute("aria-label", collapsed ? "Expand admin menu" : "Collapse admin menu");
+        adminMenuBtn?.setAttribute("aria-expanded", String(!collapsed));
+      }
+    }
+
+    function planLabel(plan) {
+      return ({
+        trial: "無料トライアル",
+        lite: "Liteプラン",
+        pro: "Proプラン",
+        admin_full: "管理者フルアクセス"
+      })[plan] || plan || "-";
+    }
+
+    function roleLabel(role) {
+      return role === "admin" ? "管理者" : "購入者";
+    }
+
+    function statusLabel(status) {
+      return ({
+        active: "有効",
+        unused: "未使用",
+        suspended: "停止中",
+        expired: "期限切れ",
+        revoked: "解除済み",
+        deleted: "削除済み",
+        connected: "連携済み",
+        error: "エラー"
+      })[status] || status || "-";
+    }
+
+    function statusPill(label) {
+      const value = String(label || "");
+      let cls = "amber";
+      if (["有効", "連携済み", "未使用", "管理者"].includes(value)) cls = "green";
+      if (["停止中", "期限切れ", "解除済み", "エラー", "削除済み"].includes(value)) cls = "red";
+      return `<span class="pill ${cls}">${value}</span>`;
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function formatDateOnly(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())}`;
+    }
+
+    async function adminJson(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "include",
+        headers: { "content-type": "application/json", ...(options.headers || {}) },
+        ...options
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.error || data.message || "Admin API error");
+      }
+      return data;
+    }
+
+    function collectLicenseIssueInput() {
+      return {
+        buyer_name: document.querySelector("#licenseBuyerName")?.value.trim() || "",
+        payment_name: document.querySelector("#licensePaymentName")?.value.trim() || "",
+        email: document.querySelector("#licenseEmail")?.value.trim() || "",
+        plan: document.querySelector("#licensePlan")?.value || "trial",
+        stripe_payment_id: document.querySelector("#licenseStripePaymentId")?.value.trim() || "",
+        expires_at: document.querySelector("#licenseExpiresAt")?.value || "",
+        memo: document.querySelector("#licenseMemo")?.value.trim() || ""
+      };
+    }
+
+    async function loadAdminUsers() {
+      const data = await adminJson("/api/admin/users", { method: "GET" });
+      const rows = Array.isArray(data.users) ? data.users : [];
+
+      document.querySelector("#userRows").innerHTML = rows.map((user) => `<tr>
+        <td>${user.id}</td>
+        <td>${user.name || "-"}</td>
+        <td>${user.email}</td>
+        <td>${statusPill(roleLabel(user.role))}</td>
+        <td>${planLabel(user.plan)}</td>
+        <td>${user.license_last4 ? `SNS-MNM-****-****-${user.license_last4}` : "-"}</td>
+        <td>${formatDateOnly(user.created_at)}</td>
+        <td>${formatDateTime(user.last_login_at)}</td>
+        <td>${statusPill(statusLabel(user.status))}</td>
+        <td><div class="actions"><button class="small" type="button">詳細</button></div></td>
+      </tr>`).join("");
+
+      document.querySelector("#planRows").innerHTML = rows.map((user) => `<tr>
+        <td>${user.name || "-"}</td>
+        <td>${planLabel(user.plan)}</td>
+        <td>${planLabel(user.plan)}</td>
+        <td>${user.plan === "trial" ? "3日間" : (user.role === "admin" ? "制限なし" : "有効")}</td>
+        <td>${statusPill(statusLabel(user.status))}</td>
+        <td><div class="actions"><button class="small" type="button">詳細</button></div></td>
+      </tr>`).join("");
+
+      document.querySelector("#metricUsers").textContent = String(rows.length);
+      document.querySelector("#metricLite").textContent = String(rows.filter((row) => row.plan === "lite").length);
+      document.querySelector("#metricPro").textContent = String(rows.filter((row) => row.plan === "pro").length);
+    }
+
+    async function loadAdminLicenses() {
+      const data = await adminJson("/api/admin/licenses", { method: "GET" });
+      const rows = Array.isArray(data.licenses) ? data.licenses : [];
+
+      document.querySelector("#licenseRows").innerHTML = rows.map((license) => `<tr>
+        <td>${license.key_masked}</td>
+        <td>${license.email}</td>
+        <td>${planLabel(license.plan)}</td>
+        <td>${formatDateOnly(license.issued_at)}</td>
+        <td>${formatDateOnly(license.expires_at)}</td>
+        <td>${statusPill(statusLabel(license.status))}</td>
+        <td>${license.memo || "-"}</td>
+        <td><div class="actions"><button class="small" type="button" data-license-ui="コピー">コピー</button><button class="small" type="button" data-license-ui="停止">停止</button><button class="small" type="button" data-license-ui="再開">再開</button><button class="small" type="button" data-license-ui="解除">解除</button></div></td>
+      </tr>`).join("");
+
+      document.querySelector("#licenseIssueCards").innerHTML = rows.slice(0, 8).map((license) => `<article class="license-card">
+        <div class="license-stage">
+          <div class="kv"><span>購入者名</span><strong>${license.buyer_name || "-"}</strong></div>
+          <div class="kv"><span>メールアドレス</span><strong>${license.email}</strong></div>
+          <div class="kv"><span>プラン</span><strong>${planLabel(license.plan)}</strong></div>
+          <div class="kv"><span>有効期限</span><strong>${formatDateOnly(license.expires_at)}</strong></div>
+          <div class="kv"><span>使用状態</span><strong>${statusPill(statusLabel(license.status))}</strong></div>
+          <div class="kv"><span>発行日</span><strong>${formatDateOnly(license.issued_at)}</strong></div>
+        </div>
+        <div class="license-stage secondary">
+          <div class="kv"><span>ライセンスキー</span><strong>${license.key_masked}</strong></div>
+          <div class="kv"><span>Stripe決済ID</span><strong>${license.stripe_payment_id || "-"}</strong></div>
+          <div class="kv"><span>決済名義</span><strong>${license.payment_name || "-"}</strong></div>
+          <div class="kv"><span>紐づくユーザーID</span><strong>${license.user_id || "-"}</strong></div>
+          <div class="kv"><span>管理メモ</span><strong>${license.memo || "-"}</strong></div>
+          <div class="kv"><span>再連携</span><strong>必要時に操作</strong></div>
+        </div>
+        <div class="license-card-actions">
+          <button class="small" type="button" data-license-ui="キーをコピー">キーをコピー</button>
+          <button class="small" type="button" data-license-ui="停止">停止</button>
+          <button class="small" type="button" data-license-ui="再開">再開</button>
+          <button class="small" type="button" data-license-ui="解除">解除</button>
+          <button class="small" type="button" data-license-ui="再連携">再連携</button>
+          <button class="small" type="button" data-license-ui="削除">削除</button>
+        </div>
+      </article>`).join("");
+
+      document.querySelector("#metricLicenses").textContent = String(rows.length);
+    }
+
+    function setThreadsAppSettingsMessage(message, isError = false) {
+      const target = document.querySelector("#threadsAppSettingsResult");
+      if (!target) return;
+      target.textContent = message;
+      target.style.color = isError ? "#ffb4bd" : "var(--soft)";
+    }
+
+    function applyThreadsAppSettings(data) {
+      const settings = data.settings || data;
+      const configured = Boolean(settings.configured || settings.meta_app_id);
+      document.querySelector("#threadsAdminMetaAppId").value = settings.meta_app_id || settings.appId || "";
+      document.querySelector("#threadsAdminScopes").value = settings.scopes || "threads_basic,threads_content_publish";
+      document.querySelector("#threadsAdminRedirectUri").value = settings.redirect_uri || `${location.origin}/api/threads/oauth/callback`;
+      document.querySelector("#threadsAppConfiguredPill").textContent = configured ? "configured" : "not set";
+      document.querySelector("#threadsAppConfiguredPill").className = `pill ${configured ? "green" : "amber"}`;
+      document.querySelector("#threadsAdminSecretLast4").textContent = settings.meta_app_secret_last4 ? `last4: ${settings.meta_app_secret_last4}` : "not saved";
+    }
+
+    async function loadThreadsAppSettings() {
+      try {
+        const data = await adminJson("/api/admin/threads-app", { method: "GET" });
+        applyThreadsAppSettings(data);
+        setThreadsAppSettingsMessage("Threads OAuth設定を読み込みました。");
+      } catch (error) {
+        setThreadsAppSettingsMessage(error.message || "Threads OAuth設定を読み込めませんでした。", true);
+      }
+    }
+
+    async function saveThreadsAppSettings() {
+      const payload = {
+        meta_app_id: document.querySelector("#threadsAdminMetaAppId").value.trim(),
+        meta_app_secret: document.querySelector("#threadsAdminMetaAppSecret").value.trim(),
+        scopes: document.querySelector("#threadsAdminScopes").value.trim(),
+        redirect_uri: document.querySelector("#threadsAdminRedirectUri").value.trim()
+      };
+
+      try {
+        const data = await adminJson("/api/admin/threads-app", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        document.querySelector("#threadsAdminMetaAppSecret").value = "";
+        applyThreadsAppSettings(data);
+        setThreadsAppSettingsMessage("Threads OAuth設定を保存しました。");
+      } catch (error) {
+        setThreadsAppSettingsMessage(error.message || "Threads OAuth設定を保存できませんでした。", true);
+      }
+    }
+
+    async function handleLicenseIssue() {
+      const payload = collectLicenseIssueInput();
+      if (!payload.email) {
+        document.querySelector("#issuedKey").textContent = "メールアドレスを入力してください";
+        return;
+      }
+
+      const data = await adminJson("/api/admin/licenses/issue", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      document.querySelector("#issuedKey").textContent = data.license?.license_key || "発行完了";
+      await Promise.all([loadAdminUsers(), loadAdminLicenses()]);
+    }
+
+    async function bootstrapAdminView() {
+      try {
+        await adminJson("/api/admin/me", { method: "GET" });
+        app.hidden = false;
+        guard.remove();
+        await Promise.all([loadAdminUsers(), loadAdminLicenses(), loadThreadsAppSettings()]);
+      } catch {
+        guard.innerHTML = `<section class="access-denied"><div class="panel"><h1>管理画面にはアクセスできません</h1><p class="muted">管理者セッションでログインしてください。購入者セッションでは管理画面を開けません。</p><div class="actions" style="justify-content:center;margin-top:16px;"><a class="primary" href="/admin/login">管理者ログインへ</a><a class="ghost" href="/admin/logout/">管理者ログアウト</a></div></div></section>`;
+      }
+    }
+
+    document.querySelectorAll("[data-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item === button));
+        document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === button.dataset.view));
+        viewTitle.textContent = button.textContent.trim();
+        closeAdminMenu();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    adminMenuBtn?.addEventListener("click", toggleAdminSidebar);
+    adminMenuClose?.addEventListener("click", closeAdminMenu);
+    adminScrim?.addEventListener("click", closeAdminMenu);
+    adminMobileQuery.addEventListener?.("change", resetResponsiveAdminMenu);
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeAdminMenu();
+    });
+    resetResponsiveAdminMenu();
+
+    document.querySelector("#issueLicenseBtn")?.addEventListener("click", async () => {
+      try {
+        await handleLicenseIssue();
+      } catch (error) {
+        document.querySelector("#issuedKey").textContent = error.message || "ライセンス発行に失敗しました";
+      }
+    });
+
+    document.querySelector("#copyLicenseBtn")?.addEventListener("click", async () => {
+      const text = document.querySelector("#issuedKey").textContent;
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+    });
+
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-license-ui]");
+      if (!button) return;
+      document.querySelector("#issuedKey").textContent = `${button.dataset.licenseUi} は次の接続処理で有効化します`;
+    });
+
+    document.querySelector("#saveThreadsAppSettingsBtn")?.addEventListener("click", saveThreadsAppSettings);
+    document.querySelector("#reloadThreadsAppSettingsBtn")?.addEventListener("click", loadThreadsAppSettings);
+
+    bootstrapAdminView();
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー | SNS MNM-PRO</title>
+  <style>
+    :root {
+      --bg: #06111f;
+      --panel: rgba(8, 23, 42, 0.94);
+      --line: rgba(78, 121, 153, 0.32);
+      --text: #f6fbff;
+      --muted: #9fbad4;
+      --link: #cfe8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px 16px 40px;
+      color: var(--text);
+      background: linear-gradient(150deg, #06111f 0%, #071b2e 45%, #092743 100%);
+      font-family: Inter, "Noto Sans JP", system-ui, sans-serif;
+      line-height: 1.8;
+    }
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 20px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    p, li { color: #b7d0ea; overflow-wrap: anywhere; word-break: break-word; }
+    a { color: var(--link); text-decoration: none; font-weight: 700; }
+    a:hover { text-decoration: underline; }
+    .meta {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    ul { padding-left: 20px; }
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .links {
+      display: flex;
+      gap: 12px 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>プライバシーポリシー</h1>
+      <p>本ポリシーは、SNS MNM-PRO（以下「本サービス」）の提供にあたり、ユーザー情報の取扱いを定めるものです。</p>
+      <p class="meta">事業者名：KOUCHA-LAB／サービス名：SNS MNM-PRO／サポート：support@koucha-lab.com</p>
+
+      <h2>1. 取得する情報</h2>
+      <ul>
+        <li>登録情報：メールアドレス</li>
+        <li>認証情報関連：パスワードハッシュ、セッション情報</li>
+        <li>購入情報：メールアドレス、ライセンス情報、プラン情報、決済連携情報（必要時）</li>
+        <li>利用情報：生成履歴、投稿管理データ、分析設定、プラン利用情報</li>
+        <li>接続情報：Threads連携設定（Meta App ID、Threads User ID、接続状況、アクセストークン、更新期限）※アクセストークンは暗号化して保存</li>
+      </ul>
+
+      <h2>2. 利用目的</h2>
+      <ul>
+        <li>本サービスの提供、認証、セッション管理</li>
+        <li>AI投稿の生成・保存・管理機能の提供</li>
+        <li>ライセンス管理、課金管理に必要な運用</li>
+        <li>不正アクセスや不正利用の監視、サポート対応</li>
+      </ul>
+
+      <h2>3. 保存方法・保存期間</h2>
+      <ul>
+        <li>平文保存を避けるため、パスワードやシークレット情報はハッシュ化・暗号化して管理します。</li>
+        <li>アカウントは、停止/退会や法令上の保存義務に応じた期間を除き、必要最小限の期間で保管します。</li>
+      </ul>
+
+      <h2>4. 第三者提供</h2>
+      <ul>
+        <li>法令に基づく場合、またはお客様の明示的な同意がある場合を除き、第三者へ不必要に提供しません。</li>
+        <li>決済連携・分析・メール送信等は、サービス運用に必要な範囲で連携先へ送信される場合があります。</li>
+      </ul>
+
+      <h2>5. お客様による削除依頼</h2>
+      <p>
+        登録情報の削除、連携解除、保存データ削除については、サポート窓口までご連絡ください。本人確認のため、登録メールアドレスをご提供ください。
+        <br>
+        メール：<a href="mailto:support@koucha-lab.com">support@koucha-lab.com</a>
+      </p>
+
+      <h2>6. セキュリティ</h2>
+      <ul>
+        <li>OpenAI APIキー、Threads Access Token、Meta App Secretは全文表示しません。</li>
+        <li>ログには機密情報を出力しません。</li>
+      </ul>
+
+      <div class="links">
+        <a href="/terms">利用規約</a>
+        <a href="/data-deletion">データ削除申請</a>
+      </div>
+      <p><a href="/login">ログイン画面へ戻る</a></p>
+    </section>
+
+    <div class="footer">© KOUCHA-LAB</div>
+  </main>
+</body>
+</html>
