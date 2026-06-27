@@ -7,7 +7,7 @@ import {
   openAiErrorResponse,
   parseJsonOutput
 } from "../../_lib/openai.js";
-import { buildGenerationPrompt, normalizeGenerationInput, PHASE1_FEATURE_LABELS } from "../../_lib/ai-prompts.js";
+import { buildGenerationPrompt, buildDiagnosisPrompt, normalizeGenerationInput, PHASE1_FEATURE_LABELS } from "../../_lib/ai-prompts.js";
 import { outputSchema } from "../../_lib/ai-schemas.js";
 import { evaluateGenerationQuality, retryInstruction } from "../../_lib/ai-quality.js";
 import { understandInput } from "../../_lib/ai-input-understanding-llm.js";
@@ -31,6 +31,13 @@ export async function onRequestPost({ request, env }) {
     const rawProfile = body.profile && typeof body.profile === "object" ? body.profile : {};
     const profile = sanitizeProfileForGeneration(rawProfile);
     const model = modelConfig(settings.modelMode, env);
+
+    // Diagnosis features (viral score / AB compare) evaluate existing posts.
+    // They do not run the generative quality loop and save no draft posts.
+    if (DIAGNOSIS_FEATURES.has(feature)) {
+      return await handleDiagnosis({ env, user, feature, input, profile, apiKey: settings.apiKey, model });
+    }
+
     // Understand the input with a single LLM pass (regex fallback on failure),
     // then reuse that understanding for the context and every prompt build.
     const { understanding } = await understandInput({ apiKey: settings.apiKey, model, feature, input, profile });
@@ -106,6 +113,47 @@ export async function onRequestPost({ request, env }) {
   } catch (error) {
     return openAiErrorResponse(error);
   }
+}
+
+const DIAGNOSIS_FEATURES = new Set(["viral", "ab-test"]);
+
+async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {
+  if (feature === "viral" && !String(input.post || "").trim()) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "診断する投稿文を入力してください", 400);
+  }
+  if (feature === "ab-test" && (!String(input.postA || "").trim() || !String(input.postB || "").trim())) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "比較する投稿案A・Bを入力してください", 400);
+  }
+
+  const schema = outputSchema(feature);
+  const prompt = buildDiagnosisPrompt(feature, input, profile);
+  const maxOutputTokens = feature === "ab-test" ? 3600 : 2800;
+  const response = await callOpenAiResponses({
+    apiKey,
+    model: model.model,
+    reasoning: model.reasoning,
+    verbosity: model.verbosity,
+    input: prompt,
+    schema,
+    maxOutputTokens
+  });
+  const output = parseJsonOutput(response.text);
+
+  const now = new Date().toISOString();
+  const historyId = crypto.randomUUID();
+  await env.DB.prepare(`
+    INSERT INTO generation_history (id, user_id, feature_key, input_json, output_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(historyId, user.userId, feature, safeJson({ input, profile }), safeJson(output), now).run();
+
+  return Response.json({
+    ok: true,
+    feature,
+    feature_label: PHASE1_FEATURE_LABELS[feature],
+    history_id: historyId,
+    saved_posts: 0,
+    output
+  });
 }
 
 async function runGeneration({ apiKey, model, prompt, schema, maxOutputTokens, feature }) {

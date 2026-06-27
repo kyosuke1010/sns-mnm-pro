@@ -9,7 +9,9 @@ export const PHASE1_FEATURE_LABELS = {
   thread: "投稿分割設計",
   series: "投稿シリーズ生成",
   rewrite: "ブラッシュアップ",
-  cta: "会話導線設計"
+  cta: "会話導線設計",
+  viral: "投稿前スコア診断",
+  "ab-test": "投稿AB比較"
 };
 
 export function normalizeGenerationInput(feature, input = {}, profile = {}, options = {}) {
@@ -142,6 +144,70 @@ function diversityPlanPrompt(feature, context) {
     "Use the assignment below as the skeleton for each item. Do not reuse the same framework, rhythm, or ending across items.",
     "Keep the body natural and faithful to input_understanding; the assignment guides structure, not wording.",
     ...lines
+  ].join("\n");
+}
+
+// Diagnosis features (viral score / AB compare). These evaluate existing
+// posts; they do not generate a feed of new posts.
+export function buildDiagnosisPrompt(feature, input = {}, profile = {}) {
+  const platform = normalizePlatform(input.channel || input.platform || profile.channels || "Threads");
+  const shared = [
+    "You are the SNS MNM-PRO post diagnosis engine for Threads/X operators.",
+    "You evaluate how clearly a post communicates and how naturally it guides the reader.",
+    "Score on a 0-100 scale where higher means easier to understand and more likely to earn a natural reaction.",
+    "",
+    "Hard rules:",
+    "- Never promise or guarantee that a post will go viral, sell, or 必ず伸びる. This is a diagnosis, not a promise.",
+    "- Judge クラリティ(伝わりやすさ), 冒頭の引き, 共感, 具体性, 読みやすさ, 導線の自然さ.",
+    "- Penalize generic-advice endings, missing concrete anchors, flat sentence rhythm, and reply/keyword/DM/gift bait.",
+    "- Improvement suggestions must be concrete and actionable, written in natural Japanese.",
+    "- Any improved/recommended post you return must keep the original claim and not add unrelated CTA or bait.",
+    "- Return valid JSON only. No markdown fences.",
+    `- Target platform: ${platform}.`
+  ];
+
+  if (feature === "ab-test") {
+    return [
+      ...shared,
+      "",
+      "TASK: Compare post A and post B.",
+      "Score each one, decide which communicates better, and explain why in concrete terms.",
+      "If they are genuinely equal, winner is 引き分け.",
+      "recommended_post must be the stronger post lightly improved (keep its meaning).",
+      "",
+      "CONTEXT:",
+      JSON.stringify({
+        platform,
+        purpose: input.purpose || profile.purpose || "",
+        target: input.target || profile.target || "",
+        genre: profile.genre || ""
+      }, null, 2),
+      "",
+      "POST A:",
+      String(input.postA || ""),
+      "",
+      "POST B:",
+      String(input.postB || "")
+    ].join("\n");
+  }
+
+  return [
+    ...shared,
+    "",
+    "TASK: Diagnose a single post before it is published.",
+    "Give an overall_score, sub scores, strengths, weaknesses, concrete improvements, and risk flags.",
+    "improved_post must be a rewritten version that keeps the original claim but fixes the weaknesses.",
+    "",
+    "CONTEXT:",
+    JSON.stringify({
+      platform,
+      purpose: input.purpose || profile.purpose || "",
+      target: input.target || profile.target || "",
+      genre: input.genre || profile.genre || ""
+    }, null, 2),
+    "",
+    "POST:",
+    String(input.post || "")
   ].join("\n");
 }
 

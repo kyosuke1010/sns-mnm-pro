@@ -75,7 +75,78 @@ export function outputSchema(feature) {
   if (feature === "day-generate") return oneDaySchema();
   if (feature === "rewrite") return brushupSchema();
   if (feature === "cta") return ctaSchema();
+  if (feature === "viral") return viralScoreSchema();
+  if (feature === "ab-test") return abCompareSchema();
   return aiPostSchema();
+}
+
+// Shared 0-100 sub-score block for diagnosis features.
+const diagnosisScoreBlock = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    clarity: { type: "number" },
+    hook: { type: "number" },
+    empathy: { type: "number" },
+    concreteness: { type: "number" },
+    readability: { type: "number" },
+    cta_naturalness: { type: "number" }
+  },
+  required: ["clarity", "hook", "empathy", "concreteness", "readability", "cta_naturalness"]
+};
+
+function viralScoreSchema() {
+  return {
+    name: "sns_mnm_viral_score_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        overall_score: { type: "number" },
+        summary: { type: "string" },
+        scores: diagnosisScoreBlock,
+        strengths: { type: "array", items: { type: "string" } },
+        weaknesses: { type: "array", items: { type: "string" } },
+        improvements: { type: "array", items: { type: "string" } },
+        risk_flags: { type: "array", items: { type: "string" } },
+        improved_post: { type: "string" }
+      },
+      required: [
+        "overall_score", "summary", "scores", "strengths",
+        "weaknesses", "improvements", "risk_flags", "improved_post"
+      ]
+    }
+  };
+}
+
+function abCompareSchema() {
+  return {
+    name: "sns_mnm_ab_compare_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        winner: { type: "string", enum: ["A", "B", "引き分け"] },
+        summary: { type: "string" },
+        reason: { type: "string" },
+        a_overall: { type: "number" },
+        b_overall: { type: "number" },
+        a_scores: diagnosisScoreBlock,
+        b_scores: diagnosisScoreBlock,
+        a_strengths: { type: "array", items: { type: "string" } },
+        a_weaknesses: { type: "array", items: { type: "string" } },
+        b_strengths: { type: "array", items: { type: "string" } },
+        b_weaknesses: { type: "array", items: { type: "string" } },
+        improvements: { type: "array", items: { type: "string" } },
+        recommended_post: { type: "string" }
+      },
+      required: [
+        "winner", "summary", "reason", "a_overall", "b_overall",
+        "a_scores", "b_scores", "a_strengths", "a_weaknesses",
+        "b_strengths", "b_weaknesses", "improvements", "recommended_post"
+      ]
+    }
+  };
 }
 
 function ctaSchema() {

@@ -246,6 +246,25 @@
       font-weight: 700;
     }
     .soon-banner b { color: #e7f0ff; }
+    .diag-result { display: grid; gap: 14px; }
+    .diag-head { display: grid; gap: 8px; }
+    .diag-score { display: flex; align-items: baseline; gap: 10px; }
+    .diag-score span { color: var(--soft); font-size: 13px; }
+    .diag-score strong { font-size: 34px; line-height: 1; color: #e7f0ff; }
+    .diag-score strong small { font-size: 14px; color: var(--soft); margin-left: 2px; }
+    .diag-summary { margin: 0; color: var(--soft); font-size: 13px; line-height: 1.7; }
+    .diag-block { display: grid; gap: 6px; }
+    .diag-block > strong { font-size: 13px; color: #cfe0ff; }
+    .diag-block ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+    .diag-block li { font-size: 13px; line-height: 1.6; }
+    .diag-block p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--soft); }
+    .diag-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .diag-col { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; background: rgba(8, 16, 28, .5); }
+    .diag-col-win { border-color: rgba(124, 160, 255, .4); background: rgba(124, 160, 255, .08); }
+    .diag-col-head { display: flex; align-items: center; gap: 8px; }
+    .diag-col-head strong { font-size: 14px; }
+    .diag-col-score { margin-left: auto; color: var(--soft); font-size: 13px; font-weight: 800; }
+    @media (max-width: 760px) { .diag-compare { grid-template-columns: 1fr; } }
     .nav button:hover { transform: translateX(2px); }
     .menu-symbol {
       width: 24px;
@@ -1212,10 +1231,15 @@
     const proPages = new Set(["series", "thread", "viral", "ab-test", "buzz-pattern", "buzz-research", "best-time", "analytics", "conversion", "score", "winning-patterns"]);
     // Features backed by the live /api/ai/generate endpoint (Phase 1).
     const serverAiFeatures = new Set(["ai-post", "day-generate", "bulk-generate", "rewrite", "thread", "series", "cta"]);
+    // Diagnosis features: live on the server but return a diagnosis, not a post feed.
+    const serverDiagnosisFeatures = new Set(["viral", "ab-test"]);
     // Menus whose generation is not wired to a real backend yet. Shown as 準備中.
-    const comingSoonFeatures = new Set(["viral", "ab-test", "buzz-research", "buzz-pattern", "reply", "conversion", "score"]);
+    const comingSoonFeatures = new Set(["buzz-research", "buzz-pattern", "reply", "conversion", "score"]);
     function isServerAiFeature(feature) {
       return serverAiFeatures.has(feature);
+    }
+    function isServerDiagnosisFeature(feature) {
+      return serverDiagnosisFeatures.has(feature);
     }
     function isComingSoon(feature) {
       return comingSoonFeatures.has(feature);
@@ -2822,6 +2846,129 @@
       };
     }
 
+    async function diagnoseWithServer(feature, input) {
+      return await apiFetchJson("/api/ai/generate", {
+        method: "POST",
+        body: JSON.stringify({ feature, input, profile: safeProfileForGeneration(state.profile) })
+      });
+    }
+
+    function diagnosisTopic(feature, input) {
+      if (feature === "ab-test") return "投稿AB比較";
+      const post = displayText(input.post || "");
+      return post ? `スコア診断: ${post.slice(0, 18)}${post.length > 18 ? "…" : ""}` : "投稿前スコア診断";
+    }
+
+    function diagnosisScoreLabels() {
+      return {
+        clarity: "伝わりやすさ",
+        hook: "冒頭の引き",
+        empathy: "共感",
+        concreteness: "具体性",
+        readability: "読みやすさ",
+        cta_naturalness: "導線の自然さ"
+      };
+    }
+
+    function clampScore(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return 0;
+      return Math.max(0, Math.min(100, Math.round(num)));
+    }
+
+    function scoreBarsHtml(scores = {}) {
+      const labels = diagnosisScoreLabels();
+      return `<div class="output-grid">${Object.keys(labels).map((key) => {
+        const pct = clampScore(scores[key]);
+        return `<div class="output-card"><strong>${labels[key]}</strong><div class="bar"><span style="width:${pct}%"></span></div><small>${pct}/100</small></div>`;
+      }).join("")}</div>`;
+    }
+
+    function bulletList(title, items = []) {
+      const clean = (items || []).map((item) => displayText(item)).filter(Boolean);
+      if (!clean.length) return "";
+      return `<div class="diag-block"><strong>${title}</strong><ul>${clean.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></div>`;
+    }
+
+    function improvedPostBlock(title, text) {
+      const body = displayText(text || "");
+      if (!body) return "";
+      return `<div class="diag-block"><strong>${title}</strong><div class="post-text">${esc(body)}</div></div>`;
+    }
+
+    function renderDiagnosisResult(feature, output = {}) {
+      if (feature === "ab-test") return renderAbCompareResult(output);
+      const overall = clampScore(output.overall_score);
+      return `<div class="diag-result">
+        <div class="diag-head"><div class="diag-score"><span>総合スコア</span><strong>${overall}<small>/100</small></strong></div>
+          <p class="diag-summary">${esc(displayText(output.summary || ""))}</p></div>
+        ${scoreBarsHtml(output.scores)}
+        ${bulletList("良い点", output.strengths)}
+        ${bulletList("弱い点", output.weaknesses)}
+        ${bulletList("改善案", output.improvements)}
+        ${bulletList("注意フラグ", output.risk_flags)}
+        ${improvedPostBlock("改善版の投稿文", output.improved_post)}
+        <div class="notice">これはAIによる伝わりやすさ診断です。伸びを保証するものではありません。</div>
+      </div>`;
+    }
+
+    function renderAbCompareResult(output = {}) {
+      const winner = displayText(output.winner || "引き分け");
+      const winnerLabel = winner === "A" ? "投稿案A" : winner === "B" ? "投稿案B" : "引き分け";
+      const column = (label, overall, scores, strengths, weaknesses, isWinner) => `
+        <div class="diag-col${isWinner ? " diag-col-win" : ""}">
+          <div class="diag-col-head"><strong>${label}</strong><span class="diag-col-score">${clampScore(overall)}/100</span>${isWinner ? `<span class="soon-badge">推奨</span>` : ""}</div>
+          ${scoreBarsHtml(scores)}
+          ${bulletList("良い点", strengths)}
+          ${bulletList("弱い点", weaknesses)}
+        </div>`;
+      return `<div class="diag-result">
+        <div class="diag-head"><div class="diag-score"><span>判定</span><strong>${esc(winnerLabel)}</strong></div>
+          <p class="diag-summary">${esc(displayText(output.summary || ""))}</p></div>
+        <div class="diag-compare">
+          ${column("投稿案A", output.a_overall, output.a_scores, output.a_strengths, output.a_weaknesses, winner === "A")}
+          ${column("投稿案B", output.b_overall, output.b_scores, output.b_strengths, output.b_weaknesses, winner === "B")}
+        </div>
+        ${output.reason ? `<div class="diag-block"><strong>判定理由</strong><p>${esc(displayText(output.reason))}</p></div>` : ""}
+        ${bulletList("改善案", output.improvements)}
+        ${improvedPostBlock("推奨案（軽く改善済み）", output.recommended_post)}
+        <div class="notice">これはAIによる伝わりやすさ比較です。伸びを保証するものではありません。</div>
+      </div>`;
+    }
+
+    function diagnosisPlainText(feature, output = {}) {
+      const labels = diagnosisScoreLabels();
+      if (feature === "ab-test") {
+        const winner = displayText(output.winner || "引き分け");
+        const lines = [
+          `判定: ${winner === "A" ? "投稿案A" : winner === "B" ? "投稿案B" : "引き分け"}`,
+          output.summary ? displayText(output.summary) : "",
+          `投稿案A 総合: ${clampScore(output.a_overall)}/100`,
+          `投稿案B 総合: ${clampScore(output.b_overall)}/100`,
+          output.reason ? `判定理由: ${displayText(output.reason)}` : "",
+          (output.improvements || []).length ? `改善案:\n${(output.improvements || []).map((item) => `・${displayText(item)}`).join("\n")}` : "",
+          output.recommended_post ? `推奨案:\n${displayText(output.recommended_post)}` : ""
+        ];
+        return lines.filter(Boolean).join("\n");
+      }
+      const scoreLines = Object.keys(labels).map((key) => `${labels[key]}: ${clampScore(output.scores?.[key])}/100`).join("\n");
+      const lines = [
+        `総合スコア: ${clampScore(output.overall_score)}/100`,
+        output.summary ? displayText(output.summary) : "",
+        scoreLines,
+        (output.strengths || []).length ? `良い点:\n${(output.strengths || []).map((item) => `・${displayText(item)}`).join("\n")}` : "",
+        (output.weaknesses || []).length ? `弱い点:\n${(output.weaknesses || []).map((item) => `・${displayText(item)}`).join("\n")}` : "",
+        (output.improvements || []).length ? `改善案:\n${(output.improvements || []).map((item) => `・${displayText(item)}`).join("\n")}` : "",
+        output.improved_post ? `改善版の投稿文:\n${displayText(output.improved_post)}` : ""
+      ];
+      return lines.filter(Boolean).join("\n");
+    }
+
+    function diagnosisCopyText(feature, output = {}) {
+      const improved = feature === "ab-test" ? output.recommended_post : output.improved_post;
+      return displayText(improved || "");
+    }
+
     function useAiFeature(feature, resultTarget, generator) {
       if (isComingSoon(feature)) {
         showResult(resultTarget, comingSoonMessage, true);
@@ -2858,6 +3005,22 @@
       }
       setTimeout(async () => {
         try {
+          if (isServerDiagnosisFeature(feature)) {
+            const data = await diagnoseWithServer(feature, input);
+            const plain = diagnosisPlainText(feature, data.output);
+            addHistory(aiFeatures[feature], diagnosisTopic(feature, input), plain, { output: data.output });
+            if (target) {
+              target.dataset.generatedText = plain;
+              target.dataset.generatedTopic = diagnosisTopic(feature, input);
+              target.dataset.generatedPlatform = input.channel || state.profile.channels || "Threads";
+              target.dataset.copyText = diagnosisCopyText(feature, data.output);
+            }
+            showStructuredResult(resultTarget, renderDiagnosisResult(feature, data.output));
+            saveState();
+            refreshChrome(currentPage());
+            showToast(isAdmin() ? `${aiFeatures[feature]}を管理者権限で実行しました` : `${aiFeatures[feature]}を実行しました`);
+            return;
+          }
           let output = null;
           if (isServerAiFeature(feature)) {
             output = await generateWithServer(feature, input);
