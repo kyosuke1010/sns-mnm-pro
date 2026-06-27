@@ -797,6 +797,15 @@
       align-items: center;
     }
     .post-text { white-space: pre-wrap; line-height: 1.58; color: #e5f4ff; font-size: 14px; }
+    .post-3tier { gap: 0; }
+    .post-tier { display: grid; gap: 10px; padding: 12px 0; }
+    .post-tier-head { padding-top: 2px; }
+    .post-tier-body {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .post-tier-actions { padding-bottom: 2px; }
+    .post-tier-badges { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .post-card-head {
       display: grid;
       gap: 8px;
@@ -3837,13 +3846,13 @@
       const children = Array.isArray(record.children) && record.children.length
         ? record.children
         : [{ post_label: "投稿本文", text: record.text, cta: record.cta }];
-      return `<div class="post-child-list">${children.map((child) => `
+      return `<div class="post-child-list">${children.map((child, index) => `
         <article class="post-child">
           <div class="post-child-head">
-            <strong class="post-child-label">${esc(displayText(child.post_label || "投稿本文"))}</strong>
+            <strong class="post-child-label">${esc(displayText(child.post_label || `${index + 1}件目`))}</strong>
             <div class="post-child-actions">
-              <button class="small-btn" data-copy-text="${esc(childCopyText(child))}" type="button">この投稿だけコピー</button>
-              ${child.cta ? `<button class="small-btn" data-copy-text="${esc(childCopyText(child, true))}" type="button">CTA込みコピー</button>` : ""}
+              <button class="small-btn" data-copy-text="${esc(childCopyText(child))}" type="button">本文をコピー</button>
+              ${child.cta ? `<button class="small-btn" data-copy-text="${esc(childCopyText(child, true))}" type="button">本文＋CTAをコピー</button>` : ""}
             </div>
           </div>
           <div class="post-text">${esc(displayText(child.text || ""))}</div>
@@ -3855,23 +3864,33 @@
 
     function renderPostRecord(rawRecord, options = {}) {
       const record = normalizePostRecord(rawRecord, rawRecord.type || rawRecord.feature_label || "AI生成", rawRecord.status || "下書き");
-      const copyTextValue = esc(recordBodyTextFromChildren(record.children, record.text));
-      const copyWithCtaValue = esc(recordTextFromChildren(record.children, record.text));
+      const bodyOnlyValue = esc(recordBodyTextFromChildren(record.children, record.text));
+      const bodyWithCtaValue = esc(recordTextFromChildren(record.children, record.text));
       const hasChildCta = (record.children || []).some((child) => child.cta);
+      const childCount = (record.children || []).length;
       const scheduler = Boolean(options.scheduler);
-      const title = scheduler
-        ? `${record.feature_label || record.type || "投稿"} / ${record.group_type || "単発"}`
-        : (record.feature_label || record.type || "投稿");
-      return `<article class="post-item">
-        <div class="post-card-head">
-          <div class="post-card-title"><strong>${esc(title)}</strong><span class="pill">${esc(record.status || "下書き")}</span></div>
+      const title = record.feature_label || record.type || "投稿";
+      const groupType = record.group_type || "単発";
+      return `<article class="post-item post-3tier">
+        <div class="post-tier post-tier-head">
+          <div class="post-card-title">
+            <strong>${esc(title)}</strong>
+            <span class="post-tier-badges">
+              <span class="pill">${esc(record.status || "下書き")}</span>
+              <span class="pill">${esc(groupType)}${childCount > 1 ? `・${childCount}件` : ""}</span>
+            </span>
+          </div>
           <div class="post-card-meta">${recordMetaTags(record, scheduler)}</div>
         </div>
-        ${renderPostChildren(record)}
-        <div class="inline-actions">
-          <button class="small-btn" data-copy-text="${copyTextValue}" type="button">このグループ全部コピー</button>
-          ${hasChildCta ? `<button class="small-btn" data-copy-text="${copyWithCtaValue}" type="button">CTA込みで全部コピー</button>` : ""}
-          ${scheduler ? `<button class="small-btn" data-page="posts" type="button">投稿管理へ</button>` : `<button class="small-btn" data-page="rewrite" type="button">ブラッシュアップ</button><button class="small-btn" data-page="series" type="button">シリーズ化</button><button class="small-btn" data-page="cta" type="button">返信導線追加</button>`}
+        <div class="post-tier post-tier-body">
+          ${renderPostChildren(record)}
+        </div>
+        <div class="post-tier post-tier-actions">
+          <div class="inline-actions">
+            <button class="small-btn" data-copy-text="${bodyOnlyValue}" type="button">${childCount > 1 ? "全部の本文をコピー" : "本文をコピー"}</button>
+            ${hasChildCta ? `<button class="small-btn" data-copy-text="${bodyWithCtaValue}" type="button">本文＋CTAをまとめてコピー</button>` : ""}
+            ${scheduler ? `<button class="small-btn" data-page="posts" type="button">投稿管理へ</button>` : `<button class="small-btn" data-page="rewrite" type="button">ブラッシュアップ</button><button class="small-btn" data-page="series" type="button">シリーズ化</button><button class="small-btn" data-page="cta" type="button">返信導線追加</button>`}
+          </div>
         </div>
       </article>`;
     }
