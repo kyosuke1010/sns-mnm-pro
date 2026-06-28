@@ -1,9 +1,8 @@
-import { getSessionUser, SESSION_SCOPE_USER } from "../../../_lib/auth.js";
-import { json } from "../../../_lib/threads-oauth.js";
+import { getThreadsSessionUser, json } from "../../../_lib/threads-oauth.js";
 
 export async function onRequestPost({ request, env }) {
   try {
-    const user = await getSessionUser(env, request, SESSION_SCOPE_USER);
+    const user = await getThreadsSessionUser(env, request);
     await env.DB.prepare(`
       UPDATE threads_connections
       SET access_token_encrypted = NULL,

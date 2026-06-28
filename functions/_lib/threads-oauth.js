@@ -1,4 +1,19 @@
 import { decryptString, encryptString, last4, randomToken } from "./security.js";
+import { AuthError, getSessionUser, SESSION_SCOPE_ADMIN, SESSION_SCOPE_USER } from "./auth.js";
+
+// Threads connection is used by buyers (user session) and by the admin who
+// manages the dedicated account. Resolve whichever authenticated session is
+// present so the connect/status/refresh/disconnect flow works for both.
+export async function getThreadsSessionUser(env, request) {
+  try {
+    return await getSessionUser(env, request, SESSION_SCOPE_USER);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return await getSessionUser(env, request, SESSION_SCOPE_ADMIN);
+    }
+    throw error;
+  }
+}
 
 export const THREADS_SCOPES = [
   "threads_basic",
