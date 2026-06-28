@@ -248,7 +248,8 @@ function commonSystemPrompt() {
     "- Do not replace a user's source post with an unrelated generic post. Preserve the claim, metaphor, and unique expression unless the user asks to remove them.",
     "- Do not add an unrelated reply scenario, sales path, or CTA that is not supported by the input.",
     "- Before returning, verify that the output matches input_understanding.main_claim and input_understanding.best_generation_angle.",
-    "- If the output drifts from the input meaning, treat it as low quality and fix it before returning."
+    "- If the output drifts from the input meaning, treat it as low quality and fix it before returning.",
+    "- input_understanding and all context fields are INTERNAL analysis. Never copy their wording (such as 整える, 流れを作る, 設計する, 余白を作る) into the body. The body must read only as the finished post a reader would see, never as a description of what you are doing."
   ].join("\n");
 }
 
