@@ -1249,7 +1249,7 @@
       score: "見込み客スコア",
       "buzz-pattern": "自然会話パターン分析"
     };
-    const trialDays = 30;
+    const trialDays = 7;
     const supportEmail = "support@koucha-lab.com";
     const dedicatedSnsAccount = {
       email: "kouchalab.support@gmail.com",
@@ -1651,8 +1651,8 @@
         return `<div><strong>無料トライアル期間が終了しました</strong><span>継続利用するにはプランを選択してください。</span></div>
           <button class="primary violet" type="button" data-page="billing">お申し込みへ</button>`;
       }
-      return `<div><strong>無料トライアル中</strong><span>無料トライアル期間：30日間 / ${trialSummaryText()}</span></div>
-        ${trialDaysRemaining() <= 1 ? `<span class="pill warn">終了まであと1日</span>` : `<span class="pill">30日間無料</span>`}`;
+      return `<div><strong>無料トライアル中</strong><span>無料トライアル期間：7日間 / ${trialSummaryText()}</span></div>
+        ${trialDaysRemaining() <= 1 ? `<span class="pill warn">終了まであと1日</span>` : `<span class="pill">7日間無料</span>`}`;
     }
 
     function trialBlock(feature) {
@@ -3471,8 +3471,8 @@
             <div class="panel-head"><div><h2>プラン・お支払い</h2><p>無料トライアルと有料プランを確認できます。AI生成にはご自身のOpenAI APIキーを使用します。</p></div><span class="pill">${isAdmin() ? "管理者フルアクセス" : esc(state.planLabel || "無料トライアル")}</span></div>
             ${isAdmin() ? `<div class="admin-banner"><div><strong>現在のプラン：管理者フルアクセス</strong><span>このアカウントは管理者用のため、すべてのプラン機能を利用できます。</span></div><div class="actions"><a class="primary violet" href="/admin">管理画面を開く</a><button class="ghost-btn" type="button" data-page="dashboard">通常画面へ戻る</button></div></div>` : ""}
             <div class="plan-grid">
-              ${planCard("無料トライアル", "0円", ["無料トライアル期間：30日間", "投稿保存数制限あり", "接続可能アカウント：1件まで", "OpenAI APIキー接続テスト可能", "Threads API接続テストのみ", "Xはコピー・予約メモ管理のみ"], "無料トライアルを開始")}
-              ${planCard("Liteプラン（テスト販売）", "1,980円/月", ["30日間無料トライアル", "通常 3,980円 → テスト販売 1,980円", "フォロワー数管理", "Threads API連携", "AI投稿文生成", "1日分生成", "投稿管理", "スケジューラー", "ブラッシュアップ", "会話導線設計", "アフィリエイトリンク管理", "生成履歴", "X向け短文化", "X投稿のコピー・予約メモ管理", "1アカウント"], "30日無料で試す", true)}
+              ${planCard("無料トライアル", "0円", ["無料トライアル期間：7日間", "投稿保存数制限あり", "接続可能アカウント：1件まで", "OpenAI APIキー接続テスト可能", "Threads API接続テストのみ", "Xはコピー・予約メモ管理のみ"], "無料トライアルを開始")}
+              ${planCard("Liteプラン（テスト販売）", "1,980円/月", ["7日間無料トライアル", "通常 3,980円 → テスト販売 1,980円", "フォロワー数管理", "Threads API連携", "AI投稿文生成", "1日分生成", "投稿管理", "スケジューラー", "ブラッシュアップ", "会話導線設計", "アフィリエイトリンク管理", "生成履歴", "X向け短文化", "X投稿のコピー・予約メモ管理", "1アカウント"], "30日無料で試す", true)}
               ${planCard("Proプラン", "9月下旬予定", ["9月下旬リリース予定", "Liteプランの全機能", "保存・フォロワー分析", "投稿シリーズ生成", "投稿分割設計", "投稿前スコア診断", "投稿AB比較", "自然会話パターン分析", "トーク自然発生テーマ", "おすすめ投稿時間", "申込導線レポート", "見込み客スコア", "勝ちパターン辞書", "Threads API連携による高度分析", "複数アカウント対応予定"], "リリースをお待ちください")}
             </div>
             <div class="notice">※AI生成には、ご自身のOpenAI APIキーを使用します。<br>※OpenAI API利用料は、お客様のOpenAIアカウントに基づき発生します。<br>※初期版では、決済確認後に管理者がライセンスキーを発行します。<br>※LiteプランではThreads API連携によるフォロワー数管理を利用できます。<br>※Proプランでは保存数・返信数・投稿別分析・勝ちパターン辞書などの高度機能を利用できます。<br>※X API連携・X自動投稿・X分析取得には対応していません。<br>お問い合わせ：${supportEmail}</div>
@@ -3493,7 +3493,7 @@
             <div class="notice">${isTrialPlan()
               ? (isTrialExpired()
                 ? "無料トライアル期間が終了しました。継続利用するにはLiteプランまたはProプランを選択してください。"
-                : `無料トライアル中です。初回登録日から30日間利用できます。現在の残り日数は${trialDaysRemaining()}日です。`)
+                : `無料トライアル中です。初回登録日から7日間利用できます。現在の残り日数は${trialDaysRemaining()}日です。`)
               : "有料プランまたは管理者権限では、無料トライアル期限ではなくプラン権限を優先します。"}</div>
           </section>
         </div></section>`,
