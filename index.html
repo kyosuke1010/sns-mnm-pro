@@ -246,6 +246,42 @@
       font-weight: 700;
     }
     .soon-banner b { color: #e7f0ff; }
+    .demo-switcher {
+      margin: 0 0 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(141, 107, 255, .10);
+      border: 1px solid rgba(141, 107, 255, .28);
+    }
+    .demo-switcher-title { display: block; font-size: 10px; font-weight: 800; color: #cdbcff; letter-spacing: .04em; margin-bottom: 7px; }
+    .demo-switch-row { display: flex; gap: 5px; }
+    .demo-switch-btn {
+      flex: 1 1 0; min-width: 0;
+      padding: 6px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(8, 16, 28, .6);
+      color: var(--soft);
+      font-size: 11px; font-weight: 800;
+      cursor: pointer;
+    }
+    .demo-switch-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--violet), var(--blue));
+      border-color: transparent;
+    }
+    .demo-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 0 0 14px; padding: 10px 14px;
+      border-radius: 12px;
+      color: #e7e0ff;
+      background: rgba(141, 107, 255, .12);
+      border: 1px solid rgba(141, 107, 255, .32);
+      font-size: 13px;
+    }
+    .demo-banner strong { display: block; color: #f1ecff; }
+    .demo-banner span { color: #c8bcec; font-size: 12px; }
+    .demo-banner .small-btn { flex: 0 0 auto; }
     .diag-result { display: grid; gap: 14px; }
     .diag-head { display: grid; gap: 8px; }
     .diag-score { display: flex; align-items: baseline; gap: 10px; }
@@ -264,6 +300,7 @@
     .diag-col-head { display: flex; align-items: center; gap: 8px; }
     .diag-col-head strong { font-size: 14px; }
     .diag-col-score { margin-left: auto; color: var(--soft); font-size: 13px; font-weight: 800; }
+    .diag-research-list { display: grid; gap: 12px; }
     @media (max-width: 760px) { .diag-compare { grid-template-columns: 1fr; } }
     .nav button:hover { transform: translateX(2px); }
     .menu-symbol {
@@ -1188,7 +1225,9 @@
       cta: "会話導線設計",
       viral: "投稿前スコア診断",
       "ab-test": "投稿AB比較",
-      "buzz-research": "トーク自然発生テーマ"
+      "buzz-research": "トーク自然発生テーマ",
+      score: "見込み客スコア",
+      "buzz-pattern": "自然会話パターン分析"
     };
     const trialDays = 3;
     const supportEmail = "support@koucha-lab.com";
@@ -1241,9 +1280,10 @@
     // Features backed by the live /api/ai/generate endpoint (Phase 1).
     const serverAiFeatures = new Set(["ai-post", "day-generate", "bulk-generate", "rewrite", "thread", "series", "cta"]);
     // Diagnosis features: live on the server but return a diagnosis, not a post feed.
-    const serverDiagnosisFeatures = new Set(["viral", "ab-test"]);
+    const serverDiagnosisFeatures = new Set(["viral", "ab-test", "score", "buzz-pattern", "buzz-research"]);
     // Menus whose generation is not wired to a real backend yet. Shown as 準備中.
-    const comingSoonFeatures = new Set(["buzz-research", "buzz-pattern", "reply", "conversion", "score"]);
+    // reply (DM) and conversion (funnel data) depend on Phase 2-B, so they stay 準備中.
+    const comingSoonFeatures = new Set(["reply", "conversion"]);
     function isServerAiFeature(feature) {
       return serverAiFeatures.has(feature);
     }
@@ -1457,7 +1497,20 @@
       };
     }
 
+    // The real signed-in identity, independent of the demo (buyer) view.
+    function isRealAdmin() {
+      return state.realAdmin === true || state.role === "admin" || state.plan === "admin_full";
+    }
+
+    // Admin-only "buyer view": render the app exactly as a Lite/Pro purchaser
+    // sees it, while the real session stays admin so generation still uses the
+    // admin's own API key. This is a frontend display simulation only.
+    function isDemoView() {
+      return isRealAdmin() && (state.demoView === "lite" || state.demoView === "pro");
+    }
+
     function isAdmin() {
+      if (isDemoView()) return false;
       return state.role === "admin" || state.plan === "admin_full";
     }
 
@@ -1470,6 +1523,7 @@
     }
 
     function canUsePro() {
+      if (isDemoView()) return state.demoView === "pro";
       return isAdmin() || state.plan === "pro";
     }
 
@@ -1530,8 +1584,18 @@
       }[char]));
     }
 
+    function demoSwitcherHtml() {
+      if (!isRealAdmin()) return "";
+      const current = state.demoView || "admin";
+      const button = (value, label) => `<button type="button" class="demo-switch-btn${current === value ? " active" : ""}" data-demo-view="${value}">${label}</button>`;
+      return `<div class="demo-switcher">
+        <span class="demo-switcher-title">表示ビュー（テスト用）</span>
+        <div class="demo-switch-row">${button("admin", "管理者")}${button("lite", "購入者Lite")}${button("pro", "購入者Pro")}</div>
+      </div>`;
+    }
+
     function buildNav(target) {
-      target.innerHTML = navGroups.map(([title, pages]) => `
+      target.innerHTML = demoSwitcherHtml() + navGroups.map(([title, pages]) => `
         <div class="${target === desktopNav ? "nav-section" : "menu-group"}">
           <span class="${target === desktopNav ? "nav-title" : "menu-group-title"}">${title}</span>
           ${pages.map((page) => {
@@ -1547,11 +1611,14 @@
     }
 
     function trialContent(feature) {
+      if (isDemoView()) {
+        return `<div><strong>購入者${state.demoView === "pro" ? "Pro" : "Lite"}ビュー（テスト）</strong><span>購入者と同じ表示です。生成はあなたのAPIキーで動きます。</span></div>`;
+      }
       if (isAdmin()) {
         return `<div><strong>管理者フルアクセス</strong><span>すべてのプラン機能を利用できます。無料トライアル制限は適用されません。</span></div>`;
       }
       if (!isTrialPlan()) {
-        return `<div><strong>${esc(state.planLabel)}</strong><span>プラン権限で利用できます。</span></div>`;
+        return `<div><strong>${esc(state.demoView ? "購入者ビュー" : state.planLabel)}</strong><span>プラン権限で利用できます。</span></div>`;
       }
       if (isTrialExpired()) {
         return `<div><strong>無料トライアル期間が終了しました</strong><span>継続利用するにはプランを選択してください。</span></div>
@@ -1579,11 +1646,17 @@
         bar.innerHTML = trialContent(bar.dataset.trial);
       });
       document.querySelectorAll(".role-label").forEach((item) => {
-        item.textContent = isPreviewMode() ? "UIプレビュー / Liteプラン" : (isAdmin() ? "管理者フルアクセス" : (state.planLabel || "無料トライアル"));
+        item.textContent = isPreviewMode() ? "UIプレビュー / Liteプラン"
+          : isDemoView() ? `購入者ビュー: ${state.demoView === "pro" ? "Pro" : "Lite"}`
+          : (isAdmin() ? "管理者フルアクセス" : (state.planLabel || "無料トライアル"));
       });
       const topActions = document.querySelector("#topActions");
-      if (topActions && isAdmin() && !topActions.querySelector("[data-admin-link]")) {
+      const existingAdminLink = topActions ? topActions.querySelector("[data-admin-link]") : null;
+      if (topActions && isAdmin() && !existingAdminLink) {
         topActions.insertAdjacentHTML("afterbegin", `<a class="ghost-btn" data-admin-link href="/admin">管理画面を開く</a>`);
+      } else if (existingAdminLink && !isAdmin()) {
+        // In buyer view, hide the admin-only link so it matches the purchaser UI.
+        existingAdminLink.remove();
       }
     }
 
@@ -2864,6 +2937,9 @@
 
     function diagnosisTopic(feature, input) {
       if (feature === "ab-test") return "投稿AB比較";
+      if (feature === "score") return "見込み客スコア";
+      if (feature === "buzz-pattern") return "自然会話パターン分析";
+      if (feature === "buzz-research") return `トークテーマ: ${displayText(input.theme || input.topic || "")}`.slice(0, 30);
       const post = displayText(input.post || "");
       return post ? `スコア診断: ${post.slice(0, 18)}${post.length > 18 ? "…" : ""}` : "投稿前スコア診断";
     }
@@ -2907,6 +2983,9 @@
 
     function renderDiagnosisResult(feature, output = {}) {
       if (feature === "ab-test") return renderAbCompareResult(output);
+      if (feature === "score") return renderLeadScoreResult(output);
+      if (feature === "buzz-pattern") return renderBuzzPatternResult(output);
+      if (feature === "buzz-research") return renderBuzzResearchResult(output);
       const overall = clampScore(output.overall_score);
       return `<div class="diag-result">
         <div class="diag-head"><div class="diag-score"><span>総合スコア</span><strong>${overall}<small>/100</small></strong></div>
@@ -2945,8 +3024,86 @@
       </div>`;
     }
 
+    function renderLeadScoreResult(output = {}) {
+      const score = clampScore(output.lead_score);
+      const temp = displayText(output.temperature || "");
+      const push = displayText(output.push_caution || "");
+      return `<div class="diag-result">
+        <div class="diag-head"><div class="diag-score"><span>見込み客スコア</span><strong>${score}<small>/100</small></strong>${temp ? `<span class="pill">温度感: ${esc(temp)}</span>` : ""}</div>
+          <p class="diag-summary">${esc(displayText(output.summary || ""))}</p></div>
+        ${bulletList("温度の根拠", output.signals)}
+        ${improvedPostBlock("次に送るべき返信文", output.next_reply)}
+        <div class="diag-block"><strong>押しすぎ注意度</strong><p>${esc(push || "中")}${output.caution_note ? ` ／ ${esc(displayText(output.caution_note))}` : ""}</p></div>
+        ${bulletList("改善のヒント", output.improvements)}
+        <div class="notice">これはAIによる目安診断です。成約を保証するものではありません。</div>
+      </div>`;
+    }
+
+    function buzzTypeBarsHtml(scores = {}) {
+      const map = { save: "保存型", empathy: "共感型", guide: "案内型" };
+      return `<div class="output-grid">${Object.keys(map).map((key) => {
+        const pct = clampScore(scores[key]);
+        return `<div class="output-card"><strong>${map[key]}スコア</strong><div class="bar"><span style="width:${pct}%"></span></div><small>${pct}/100</small></div>`;
+      }).join("")}</div>`;
+    }
+
+    function renderBuzzPatternResult(output = {}) {
+      const dominant = displayText(output.dominant_type || "");
+      return `<div class="diag-result">
+        <div class="diag-head"><div class="diag-score"><span>強いパターン</span><strong style="font-size:24px">${esc(dominant || "—")}</strong></div>
+          <p class="diag-summary">${esc(displayText(output.summary || ""))}</p></div>
+        ${buzzTypeBarsHtml(output.scores)}
+        ${bulletList("良い点", output.strengths)}
+        ${bulletList("弱い点", output.weaknesses)}
+        ${bulletList("改善案", output.improvements)}
+        ${improvedPostBlock("改善した投稿例", output.rewrite_suggestion)}
+        <div class="notice">投稿文の傾向をAIでスコア化した目安です。</div>
+      </div>`;
+    }
+
+    function renderBuzzResearchResult(output = {}) {
+      const themes = Array.isArray(output.themes) ? output.themes : [];
+      const cards = themes.map((t, i) => `
+        <div class="diag-col">
+          <div class="diag-col-head"><strong>${i + 1}. ${esc(displayText(t.theme || ""))}</strong></div>
+          ${t.why ? `<div class="diag-block"><strong>会話が生まれやすい理由</strong><p>${esc(displayText(t.why))}</p></div>` : ""}
+          ${t.angle ? `<div class="diag-block"><strong>切り口</strong><p>${esc(displayText(t.angle))}</p></div>` : ""}
+          ${t.example_opening ? improvedPostBlock("冒頭の例", t.example_opening) : ""}
+        </div>`).join("");
+      return `<div class="diag-result">
+        <div class="diag-head"><p class="diag-summary">${esc(displayText(output.summary || ""))}</p></div>
+        <div class="diag-research-list">${cards}</div>
+        <div class="notice">${esc(displayText(output.notice || "外部SNSデータは使用していません。AIによる提案です。"))}</div>
+      </div>`;
+    }
+
     function diagnosisPlainText(feature, output = {}) {
       const labels = diagnosisScoreLabels();
+      if (feature === "score") {
+        return [
+          `見込み客スコア: ${clampScore(output.lead_score)}/100`,
+          `温度感: ${displayText(output.temperature || "")}`,
+          output.summary ? displayText(output.summary) : "",
+          output.next_reply ? `次に送るべき返信文:\n${displayText(output.next_reply)}` : "",
+          `押しすぎ注意度: ${displayText(output.push_caution || "")}${output.caution_note ? ` / ${displayText(output.caution_note)}` : ""}`
+        ].filter(Boolean).join("\n");
+      }
+      if (feature === "buzz-pattern") {
+        return [
+          `強いパターン: ${displayText(output.dominant_type || "")}`,
+          `保存型: ${clampScore(output.scores?.save)}/100 ・ 共感型: ${clampScore(output.scores?.empathy)}/100 ・ 案内型: ${clampScore(output.scores?.guide)}/100`,
+          output.summary ? displayText(output.summary) : "",
+          (output.improvements || []).length ? `改善案:\n${(output.improvements || []).map((i) => `・${displayText(i)}`).join("\n")}` : "",
+          output.rewrite_suggestion ? `改善した投稿例:\n${displayText(output.rewrite_suggestion)}` : ""
+        ].filter(Boolean).join("\n");
+      }
+      if (feature === "buzz-research") {
+        const themes = Array.isArray(output.themes) ? output.themes : [];
+        return [
+          output.summary ? displayText(output.summary) : "",
+          ...themes.map((t, i) => `${i + 1}. ${displayText(t.theme || "")}\n　理由: ${displayText(t.why || "")}\n　切り口: ${displayText(t.angle || "")}\n　冒頭例: ${displayText(t.example_opening || "")}`)
+        ].filter(Boolean).join("\n\n");
+      }
       if (feature === "ab-test") {
         const winner = displayText(output.winner || "引き分け");
         const lines = [
@@ -2974,8 +3131,14 @@
     }
 
     function diagnosisCopyText(feature, output = {}) {
-      const improved = feature === "ab-test" ? output.recommended_post : output.improved_post;
-      return displayText(improved || "");
+      if (feature === "ab-test") return displayText(output.recommended_post || "");
+      if (feature === "score") return displayText(output.next_reply || "");
+      if (feature === "buzz-pattern") return displayText(output.rewrite_suggestion || "");
+      if (feature === "buzz-research") {
+        const themes = Array.isArray(output.themes) ? output.themes : [];
+        return themes.map((t) => displayText(t.example_opening || "")).filter(Boolean).join("\n\n");
+      }
+      return displayText(output.improved_post || "");
     }
 
     function useAiFeature(feature, resultTarget, generator) {
@@ -3142,6 +3305,25 @@
       return new URLSearchParams(location.search).get("page") || "dashboard";
     }
 
+    function setDemoView(value) {
+      if (!isRealAdmin()) return;
+      state.demoView = (value === "lite" || value === "pro") ? value : null;
+      closeMobileMenu();
+      renderPage(currentPage());
+      showToast(state.demoView
+        ? `購入者${state.demoView === "pro" ? "Pro" : "Lite"}ビューに切り替えました`
+        : "管理者ビューに戻しました");
+    }
+
+    function demoBanner() {
+      if (!isDemoView()) return "";
+      const label = state.demoView === "pro" ? "購入者Proビュー" : "購入者Liteビュー";
+      return `<div class="demo-banner" role="status">
+        <div><strong>${label}（テスト表示）</strong><span>購入者と同じ画面です。生成はあなたのAPIキーで実行されます。</span></div>
+        <button type="button" class="small-btn" data-demo-view="admin">管理者ビューに戻る</button>
+      </div>`;
+    }
+
     function navigate(page, replace = false) {
       const next = new URL(location.href);
       if (page === "dashboard") next.searchParams.delete("page");
@@ -3157,7 +3339,7 @@
       pageLead.textContent = meta[1];
       const rawHtml = isProPage(page) && !canUsePro() ? proGatePage(page) : (pageTemplates[page] ? pageTemplates[page]() : genericPage(page));
       const pageHtml = isProPage(page) && !canUsePro() ? rawHtml : injectFeatureIntro(page, rawHtml);
-      pageHost.innerHTML = `${previewBanner()}${pageHtml}`;
+      pageHost.innerHTML = `${previewBanner()}${demoBanner()}${pageHtml}`;
       refreshChrome(page);
       bindDynamicEvents();
       if (!options.keepScroll) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -3626,7 +3808,7 @@
       return aiPageShell("buzz-pattern", `
         <label>分析対象投稿文<textarea name="post" placeholder="分析したい投稿文を入力"></textarea></label>
         <label>目的<select name="purpose"><option>保存を増やしたい</option><option>返信を増やしたい</option><option>フォローを増やしたい</option><option>商品案内につなげたい</option></select></label>
-      `, "buzzPatternResult", `<div class="output-grid"><div class="output-card"><strong>保存型スコア</strong><div class="bar"><span style="width:72%"></span></div></div><div class="output-card"><strong>共感型スコア</strong><div class="bar"><span style="width:64%"></span></div></div><div class="output-card"><strong>案内型スコア</strong><div class="bar"><span style="width:58%"></span></div></div></div>`);
+      `, "buzzPatternResult", `<div class="notice">投稿文を分解し、保存型・共感型・案内型の強さをAIでスコア化して改善案を出します。</div>`);
     }
 
     function viralPage() {
@@ -3789,14 +3971,11 @@
     }
 
     function scorePage() {
-      return `<section class="page active"><div class="page-shell">
-        <section class="panel" id="scoreForm"><div class="panel-head"><div><h2>見込み客スコア</h2><p>返信内容から温度感、次の返信文、押しすぎ注意度を診断します。</p></div></div>
-          ${comingSoonBanner("score")}
-          <div class="form-grid"><label>相手の返信内容<textarea name="reply"></textarea></label><label>こちらの投稿文<textarea name="post"></textarea></label><label>案内した商品または特典<input name="product" value="${esc(state.profile.product)}"></label></div>
-          <div class="actions"><button class="primary" type="button" id="scoreBtn">スコア診断</button></div>
-          <div class="result-box" id="scoreResult">見込み客スコア、温度感、次に送るべき返信文、押しすぎ注意度を表示します。</div>
-        </section>
-      </div></section>`;
+      return aiPageShell("score", `
+        <label>相手の返信内容<textarea name="reply" placeholder="読者から届いた返信・コメント"></textarea></label>
+        <label>こちらの投稿文<textarea name="post" placeholder="その返信が付いた投稿文"></textarea></label>
+        <label>案内した商品または特典<input name="product" value="${esc(state.profile.product)}"></label>
+      `, "scoreResult", `<div class="notice">返信内容から温度感・次の返信文・押しすぎ注意度をAI診断します。断定はせず目安として表示します。</div>`);
     }
 
     function replyPage() {
@@ -4035,6 +4214,8 @@
         cta: ["post"],
         viral: ["post"],
         "ab-test": ["postA", "postB"],
+        score: ["reply"],
+        "buzz-pattern": ["post"],
         "buzz-research": ["theme"]
       };
       const labels = {
@@ -4044,7 +4225,8 @@
         source: "元投稿文",
         post: "投稿文",
         postA: "投稿案A",
-        postB: "投稿案B"
+        postB: "投稿案B",
+        reply: "相手の返信内容"
       };
       const missing = (required[feature] || []).find((key) => !String(input[key] || "").trim());
       return missing ? `${labels[missing] || missing}を入力してください` : "";
@@ -4869,8 +5051,6 @@
       if (csvBtn) csvBtn.addEventListener("click", () => copyText("current,previous,saves,replies,posts\n12480,10520,1264,148,28"));
       const conversionBtn = document.querySelector("#conversionBtn");
       if (conversionBtn) conversionBtn.addEventListener("click", () => { showResult("#conversionResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
-      const scoreBtn = document.querySelector("#scoreBtn");
-      if (scoreBtn) scoreBtn.addEventListener("click", () => { showResult("#scoreResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
       const replyBtn = document.querySelector("#replyBtn");
       if (replyBtn) replyBtn.addEventListener("click", () => { showResult("#replyResult", comingSoonMessage, true); showToast("この機能は準備中です"); });
       const addSchedule = document.querySelector("#addScheduleBtn");
@@ -4967,6 +5147,11 @@
     }
 
     document.addEventListener("click", (event) => {
+      const demoButton = event.target.closest("[data-demo-view]");
+      if (demoButton) {
+        setDemoView(demoButton.dataset.demoView);
+        return;
+      }
       const pageButton = event.target.closest("[data-page]");
       if (pageButton) {
         navigate(pageButton.dataset.page);
@@ -5129,8 +5314,11 @@
           state.allFeatures = true;
           state.trialLimited = false;
           state.canAccessAdmin = true;
+          state.realAdmin = true;
           localStorage.removeItem("sns-mnm-pro-role");
         } else {
+          state.realAdmin = false;
+          state.demoView = null;
           state.planLabel = data.user.plan === "pro" ? "Proプラン" : data.user.plan === "lite" ? "Liteプラン" : "無料トライアル";
           state.trialLimited = data.user.plan === "trial";
           if (data.user.trialStartedAt) state.trialStartedAt = data.user.trialStartedAt;
@@ -5155,6 +5343,7 @@
         state.role = "admin";
         state.plan = "admin_full";
         state.planLabel = data.admin.planLabel || "管理者フルアクセス";
+        state.realAdmin = true;
         state.allFeatures = true;
         state.trialLimited = false;
         state.canUseAllPlans = true;
