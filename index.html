@@ -301,6 +301,25 @@
     .diag-col-head strong { font-size: 14px; }
     .diag-col-score { margin-left: auto; color: var(--soft); font-size: 13px; font-weight: 800; }
     .diag-research-list { display: grid; gap: 12px; }
+    .guide-quick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 4px 0 18px; }
+    .guide-quick-btn {
+      display: flex; align-items: center; gap: 10px; text-align: left;
+      padding: 12px; border-radius: 12px; cursor: pointer;
+      border: 1px solid rgba(124, 160, 255, .24);
+      background: rgba(124, 160, 255, .08);
+      color: #e5f4ff;
+    }
+    .guide-quick-btn:hover { background: rgba(124, 160, 255, .16); }
+    .guide-quick-emoji { font-size: 22px; flex: 0 0 auto; }
+    .guide-quick-text { display: grid; gap: 2px; min-width: 0; }
+    .guide-quick-text strong { font-size: 13px; }
+    .guide-quick-text small { color: var(--soft); font-size: 11px; }
+    .guide-group { margin-top: 18px; }
+    .guide-group-title { font-size: 14px; margin: 0 0 10px; color: #dbe7ff; }
+    .guide-card-emoji { margin-right: 7px; }
+    .guide-steps { margin: 0; padding-left: 20px; display: grid; gap: 5px; }
+    .guide-steps li { line-height: 1.6; }
+    @media (max-width: 560px) { .guide-quick-grid { grid-template-columns: 1fr; } }
     @media (max-width: 760px) { .diag-compare { grid-template-columns: 1fr; } }
     .nav button:hover { transform: translateX(2px); }
     .menu-symbol {
@@ -4161,23 +4180,84 @@
     }
 
     function guidePage() {
-      const sections = [
-        ["フォロワー数管理", "フォロワー数管理は、Liteプランでも使える基本機能です。Threads API連携により、現在のフォロワー数、前回同期からの増減、増減率、最終同期日時を確認できます。", ["現在フォロワー数の確認", "前回同期からの増減確認", "増減率の確認", "最終同期日時の確認", "Threads API接続状態の確認", "Liteプランでも利用可能"], "保存数、返信数、投稿ごとの反応分析などの高度分析はProプラン機能です。"],
-        ["はじめに", "SNS MNM-PROは、Threads運用者向けのAI投稿生成・投稿管理・分析補助ツールです。", ["投稿文をAIで作成", "1日分の投稿をまとめて作成", "投稿を保存・管理", "Threadsのフォロワー数を管理", "Proプランでは高度分析や勝ちパターン辞書を利用"], ""],
-        ["初回登録の流れ", "購入後に届いたライセンスキーを使って、初回登録を行います。", ["購入後に届いたライセンスキーを用意する", "初回登録画面を開く", "メールアドレス、ライセンスキー、パスワードを入力する", "アカウントを作成する", "ダッシュボードへ進む"], "ライセンスキーは初回登録用です。2回目以降はメールアドレスとパスワードでログインします。"],
-        ["OpenAI APIキー設定", "AI生成には、ご自身のOpenAI APIキーが必要です。", ["設定画面を開く", "OpenAI APIキーを入力する", "接続テストを行う", "成功表示を確認する"], "OpenAI API利用料は、お客様ご自身のOpenAIアカウントに基づき発生します。"],
-        ["Threads API連携設定", `Threads API連携により、フォロワー数管理やPro向け分析、自動投稿の土台を作ります。管理者テストでは ${dedicatedSnsAccount.email} で作成した ${dedicatedSnsAccount.threads} / ${dedicatedSnsAccount.instagram} を接続対象にします。`, ["設定画面を開く", "Threads API連携設定を開く", "Meta App ID、Threads User ID、Access Tokenなどを入力する", "接続テストを行う", "フォロワー数取得テストを行う", "旧アカウントのTokenが残っている場合は連携解除してから新アカウントで再接続する"], "Access TokenやApp Secretは全文表示されません。接続情報は暗号化保存する前提です。"],
-        ["投稿を作る", "AI投稿文生成から、テーマやキーワードを入力して投稿文を作成します。", ["AI投稿文生成を開く", "トピックを入力する", "投稿目的を選ぶ", "投稿タイプを選ぶ", "生成する", "コピーまたは投稿管理へ保存する"], "露骨なキーワード返信ではなく、読者が自然に悩みや状況を話しやすい問いを優先します。"],
-        ["1日分の投稿を作る", "朝・昼・夜の3投稿をまとめて作成できます。", ["1日分生成を開く", "今日のテーマを入力する", "ターゲットと目的を選ぶ", "生成する", "投稿管理へ保存する", "必要に応じてスケジューラーへ送る"], ""],
-        ["スケジューラーを使う", "投稿予定日時を決めて、投稿内容を管理できます。", ["Liteプラン：投稿予定管理、予約メモ、コピー運用に対応します。", "Proプラン：Threads API連携後、Threads予約投稿・自動投稿に対応する想定です。", "X：初期版では自動投稿ではなく、コピー・予約メモ管理のみ対応します。"], ""],
-        ["Pro限定機能", "Proプランでは高度分析と自動投稿系の機能を利用できます。LiteプランではPro限定メニューに王冠アイコンが表示されます。", ["勝ちパターン辞書", "Threads自動投稿", "投稿シリーズ生成", "投稿分割設計", "投稿前スコア診断", "投稿AB比較", "自然会話パターン分析", "トーク自然発生テーマ", "おすすめ投稿時間", "保存・フォロワー分析", "申込導線レポート", "見込み客スコア"], ""],
-        ["勝ちパターン辞書", "反応が良かった投稿の型を保存し、AI生成時に再利用するPro限定機能です。", ["勝ちパターン辞書を開く", "パターン名を入力する", "冒頭パターン、本文構成、締め文を登録する", "AI投稿生成時にその型を選ぶ"], "勝ちパターン辞書はProプラン限定です。"],
-        ["よくある質問", "購入者が迷いやすい項目をまとめています。", ["Q. AI生成には何が必要ですか？ A. ご自身のOpenAI APIキーが必要です。", "Q. OpenAI API料金は月額料金に含まれますか？ A. 含まれません。OpenAI API利用料はご自身のOpenAIアカウントに基づき発生します。", "Q. Xへ自動投稿できますか？ A. 初期版では対応していません。Xはコピー・予約メモ管理のみ対応します。", "Q. Threadsへ自動投稿できますか？ A. Proプランで対応予定です。Threads API連携後、予約投稿・自動投稿に対応する想定です。", "Q. Liteプランで使える分析は何ですか？ A. フォロワー数管理が利用できます。保存数や返信数などの高度分析はProプランです。", "Q. 勝ちパターン辞書はLiteプランで使えますか？ A. Proプラン限定です。", "Q. LiteプランでThreads自動投稿は使えますか？ A. 使えません。Liteプランでは投稿予定管理・予約メモ・コピー運用まで対応します。Threads自動投稿はProプラン限定です。"], ""]
+      // 目的別クイックガイド（クリックでそのメニューへ移動）
+      const quick = [
+        ["📝", "投稿ネタを量産したい", "一括生成 / AI投稿文生成", "bulk-generate"],
+        ["🌅", "毎日の投稿を楽にしたい", "1日分生成（朝・昼・夜）", "day-generate"],
+        ["💬", "返信・会話を増やしたい", "会話導線設計", "cta"],
+        ["🔥", "投稿前に伝わるか確認したい", "投稿前スコア診断", "viral"],
+        ["⚖️", "2案で迷ったら比べたい", "投稿AB比較", "ab-test"],
+        ["🧭", "見込み客の温度を見たい", "見込み客スコア", "score"],
+        ["💡", "伸びるテーマを探したい", "トーク自然発生テーマ", "buzz-research"],
+        ["📊", "フォロワーを管理したい", "フォロワー数管理", "followers"]
       ];
+
+      // [emoji, title, desc, items(steps or points), note, ordered]
+      const groups = [
+        ["🚀 はじめに", [
+          ["🚀", "SNS MNM-PRO とは", "Threads / X 運用者向けの、AI投稿生成・投稿管理・診断補助ツールです。やりたいことに合わせて、上の「目的別ガイド」から各メニューへ進めます。", ["投稿文・1日分・一括をAIで作成", "投稿前スコア診断・AB比較で品質チェック", "見込み客スコアやトークテーマで会話を増やす", "投稿管理・スケジューラーで保存／予約メモ運用", "Threads連携でフォロワー数を管理"], "", false]
+        ]],
+        ["🔑 まずやる初期設定（3ステップ）", [
+          ["①", "初回登録", "購入後に届くライセンスキーで初回登録します。", ["ライセンスキーを用意する", "初回登録画面を開く", "メールアドレス・ライセンスキー・パスワードを入力", "アカウントを作成してダッシュボードへ"], "2回目以降はメールアドレスとパスワードでログインします。", true],
+          ["②", "OpenAI APIキー設定", "AI生成には、ご自身の OpenAI APIキーが必要です。", ["設定画面を開く", "OpenAI APIキーを入力する", "接続テストを行う", "「登録済み」の表示を確認する"], "OpenAI API利用料は、お客様ご自身のOpenAIアカウントに基づき発生します（月額料金には含まれません）。", true],
+          ["③", "Threadsと連携（フォロワー管理を使う場合）", "「Threadsと連携」ボタンひとつで接続できます（App ID等の手入力は不要）。", ["設定 → Threads API連携設定 を開く", "「Threadsと連携」ボタンを押す", "Metaでログインして許可する", "自動で接続完了（Threads User IDなどが取得されます）"], "「接続エラー / 未取得」は、まだ連携が完了していない状態です。「Threadsと連携」を押して接続してください。トークン期限が近づいたら「トークン更新」または再連携で延長できます。", true]
+        ]],
+        ["✍️ 投稿を作る", [
+          ["✍️", "AI投稿文生成", "トピックと目的から、すぐ使える投稿文を生成します。", ["AI投稿文生成を開く", "トピック・キーワードを入力", "投稿目的・投稿タイプ・口調を選ぶ", "生成 → コピー or 投稿管理へ保存"], "露骨なキーワード返信ではなく、読者が自然に悩みを話したくなる問いを優先します。", true],
+          ["🌅", "1日分生成", "朝・昼・夜の3投稿をまとめて作成します。", ["今日のテーマを入力", "ターゲット・目的を選ぶ", "生成 → 投稿管理 or スケジューラーへ"], "", true],
+          ["📚", "一括生成 / シリーズ / 分割設計", "複数テーマの量産、日跨ぎシリーズ、リプ欄への分割設計ができます。", ["一括生成：テーマリストから候補をまとめて作成", "投稿シリーズ生成：1日・3日・7日などの連続投稿（Pro）", "投稿分割設計：投稿1 → リプ欄2 → リプ欄3 に安全に分割（Pro）"], "", false],
+          ["💬", "会話導線設計", "今ある投稿文を、読者が自分の状況を話したくなる流れへ整えます。", ["投稿文を貼り付ける", "話しかけテーマ・会話目的を選ぶ", "生成 → 末尾の問いまで入った完成文ができる"], "", true],
+          ["🪄", "ブラッシュアップ", "既存の投稿文を、目的に合わせて磨き直します。", ["元の投稿文を貼り付ける", "生成 → フック・具体性・導線が改善された文に"], "", true]
+        ]],
+        ["🔎 診断・分析で質を上げる（Pro中心）", [
+          ["🔥", "投稿前スコア診断", "投稿前に「伝わりやすさ」をAI診断し、改善案と改善版を出します。", ["投稿文を入力 → 生成", "総合スコア・項目別スコア・改善版を確認"], "断定（必ず伸びる等）はせず、目安として表示します。", false],
+          ["⚖️", "投稿AB比較", "2つの投稿案を比べ、どちらが伝わりやすいかと理由を出します。", ["投稿案A・Bを入力 → 生成", "勝ち案・理由・推奨案を確認"], "", false],
+          ["🧭", "見込み客スコア", "相手の返信から温度感と、押し売りにならない次の返信文を提案します。", ["相手の返信内容を入力 → 生成", "スコア・温度感・次の返信文・押しすぎ注意度を確認"], "成約を保証するものではありません。", false],
+          ["🧩", "自然会話パターン分析", "投稿を保存型・共感型・案内型でスコア化し、改善案を出します。", ["投稿文を入力 → 生成"], "", false],
+          ["💡", "トーク自然発生テーマ", "テーマ・ターゲット別に、会話が生まれやすいテーマをAIが提案します。", ["テーマ・ターゲットを入力 → 生成"], "外部SNSデータは使わず、AIの提案として表示します。", false]
+        ]],
+        ["📅 保存・予約・管理", [
+          ["🗂️", "投稿管理", "生成した投稿の保管庫です。本文だけのコピーや、1日分（朝昼夜）・分割（投稿1/リプ2/リプ3）も整理して表示します。", ["生成結果を「投稿管理へ保存」", "「本文をコピー」で本文だけコピー", "ブラッシュアップ・シリーズ化・返信導線追加へ展開"], "", false],
+          ["📅", "スケジューラー", "投稿予定日時を決めて管理します。", ["Lite：投稿予定管理・予約メモ・コピー運用", "Pro：Threads連携後に予約投稿・自動投稿（予定）", "X：初期版はコピー・予約メモ管理のみ"], "", false],
+          ["📊", "フォロワー数管理", "Threads連携で、現在数・増減・増減率・最終同期を確認します。", ["Threadsと連携する", "フォロワー数取得で現在値を同期", "増減・増減率を確認"], "保存数・返信数などの高度分析はProプランです。", false]
+        ]],
+        ["👑 Lite と Pro の違い", [
+          ["👑", "プランでできること", "LiteではPro限定メニューに王冠アイコンが付きます。", ["Lite：AI投稿生成・1日分・投稿管理・スケジューラー（予約メモ）・会話導線設計・フォロワー数管理 など", "Pro：投稿シリーズ/分割設計・投稿前スコア診断・AB比較・自然会話パターン分析・トーク自然発生テーマ・見込み客スコア・勝ちパターン辞書・Threads自動投稿 など"], "管理者は「表示ビュー（テスト用）」で購入者Lite/Proの見え方を切り替えて確認できます。", false]
+        ]],
+        ["❓ よくある質問", [
+          ["❓", "FAQ", "迷いやすい点をまとめています。", [
+            "Q. AI生成に何が必要？ → ご自身のOpenAI APIキー。",
+            "Q. OpenAI料金は月額に含まれる？ → 含まれません（ご自身のOpenAIアカウント課金）。",
+            "Q. Threadsはどう繋ぐ？ → 設定の「Threadsと連携」ボタンを押すだけ。手入力は不要です。",
+            "Q. 「接続エラー」と出る → まだ連携が完了していない／期限切れです。「Threadsと連携」で（再）接続してください。",
+            "Q. Threads/Xへ自動投稿できる？ → 初期版は未対応。Threads自動投稿はProで対応予定、Xはコピー・予約メモ管理のみ。",
+            "Q. Liteで使える分析は？ → フォロワー数管理。高度分析はPro。"
+          ], "", false]
+        ]]
+      ];
+
+      const quickHtml = `<div class="guide-quick-grid">${quick.map(([emoji, label, menu, page]) =>
+        `<button type="button" class="guide-quick-btn" data-page="${page}"><span class="guide-quick-emoji">${emoji}</span><span class="guide-quick-text"><strong>${esc(label)}</strong><small>${esc(menu)}</small></span></button>`
+      ).join("")}</div>`;
+
+      const groupsHtml = groups.map(([groupTitle, cards]) => `
+        <div class="guide-group">
+          <h3 class="guide-group-title">${esc(groupTitle)}</h3>
+          <div class="list">${cards.map(([emoji, title, desc, items, note, ordered]) => `
+            <article class="post-item guide-card">
+              <header><strong><span class="guide-card-emoji">${emoji}</span>${esc(title)}</strong></header>
+              <p class="muted">${esc(desc)}</p>
+              ${ordered ? `<ol class="guide-steps">${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ol>` : `<ul>${items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>`}
+              ${note ? `<div class="notice">${esc(note)}</div>` : ""}
+            </article>`).join("")}</div>
+        </div>`).join("");
+
       return `<section class="page active"><div class="page-shell compact-shell">
         <section class="panel">
-          <div class="panel-head"><div><h2>ツールマニュアル</h2><p>初期設定、投稿作成、Threads連携、Lite/Proの違いを確認できます。</p></div></div>
-          <div class="list">${sections.map(([title, desc, items, note], i) => `<article class="post-item"><header><strong>${i + 1}. ${esc(title)}</strong></header><p class="muted">${esc(desc)}</p><ul>${items.map((item) => `<li>${esc(item)}</li>`).join("")}</ul>${note ? `<div class="notice">${esc(note)}</div>` : ""}</article>`).join("")}</div>
+          <div class="panel-head"><div><h2>使い方ガイド 📘</h2><p>やりたいことから選べる目的別ガイドです。初期設定・投稿作成・診断・Threads連携・Lite/Proの違いをまとめています。</p></div></div>
+          <h3 class="guide-group-title">🎯 目的別ガイド（タップで開く）</h3>
+          ${quickHtml}
+          ${groupsHtml}
         </section>
       </div></section>`;
     }
