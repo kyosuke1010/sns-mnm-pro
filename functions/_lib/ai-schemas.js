@@ -77,7 +77,95 @@ export function outputSchema(feature) {
   if (feature === "cta") return ctaSchema();
   if (feature === "viral") return viralScoreSchema();
   if (feature === "ab-test") return abCompareSchema();
+  if (feature === "score") return leadScoreSchema();
+  if (feature === "buzz-pattern") return buzzPatternSchema();
+  if (feature === "buzz-research") return buzzResearchSchema();
   return aiPostSchema();
+}
+
+function leadScoreSchema() {
+  return {
+    name: "sns_mnm_lead_score_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        lead_score: { type: "number" },
+        temperature: { type: "string", enum: ["高い", "中", "低い"] },
+        summary: { type: "string" },
+        signals: { type: "array", items: { type: "string" } },
+        next_reply: { type: "string" },
+        push_caution: { type: "string", enum: ["低い", "中", "高い"] },
+        caution_note: { type: "string" },
+        improvements: { type: "array", items: { type: "string" } }
+      },
+      required: [
+        "lead_score", "temperature", "summary", "signals",
+        "next_reply", "push_caution", "caution_note", "improvements"
+      ]
+    }
+  };
+}
+
+function buzzPatternSchema() {
+  return {
+    name: "sns_mnm_buzz_pattern_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        summary: { type: "string" },
+        scores: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            save: { type: "number" },
+            empathy: { type: "number" },
+            guide: { type: "number" }
+          },
+          required: ["save", "empathy", "guide"]
+        },
+        dominant_type: { type: "string", enum: ["保存型", "共感型", "案内型"] },
+        strengths: { type: "array", items: { type: "string" } },
+        weaknesses: { type: "array", items: { type: "string" } },
+        improvements: { type: "array", items: { type: "string" } },
+        rewrite_suggestion: { type: "string" }
+      },
+      required: [
+        "summary", "scores", "dominant_type", "strengths",
+        "weaknesses", "improvements", "rewrite_suggestion"
+      ]
+    }
+  };
+}
+
+function buzzResearchSchema() {
+  return {
+    name: "sns_mnm_buzz_research_v1",
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        summary: { type: "string" },
+        themes: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              theme: { type: "string" },
+              why: { type: "string" },
+              angle: { type: "string" },
+              example_opening: { type: "string" }
+            },
+            required: ["theme", "why", "angle", "example_opening"]
+          }
+        },
+        notice: { type: "string" }
+      },
+      required: ["summary", "themes", "notice"]
+    }
+  };
 }
 
 // Shared 0-100 sub-score block for diagnosis features.

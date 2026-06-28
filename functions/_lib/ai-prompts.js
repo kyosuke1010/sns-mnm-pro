@@ -11,7 +11,10 @@ export const PHASE1_FEATURE_LABELS = {
   rewrite: "ブラッシュアップ",
   cta: "会話導線設計",
   viral: "投稿前スコア診断",
-  "ab-test": "投稿AB比較"
+  "ab-test": "投稿AB比較",
+  score: "見込み客スコア",
+  "buzz-pattern": "自然会話パターン分析",
+  "buzz-research": "トーク自然発生テーマ"
 };
 
 export function normalizeGenerationInput(feature, input = {}, profile = {}, options = {}) {
@@ -188,6 +191,78 @@ export function buildDiagnosisPrompt(feature, input = {}, profile = {}) {
       "",
       "POST B:",
       String(input.postB || "")
+    ].join("\n");
+  }
+
+  if (feature === "score") {
+    return [
+      ...shared,
+      "",
+      "TASK: Estimate how warm a prospect is from their reply, and draft the next message.",
+      "Read the reader's reply to our post and judge their interest temperature.",
+      "lead_score is 0-100 (higher = warmer). temperature is 高い/中/低い.",
+      "signals: concrete cues in their wording that justify the temperature.",
+      "next_reply: a natural Japanese reply to send next. It must NOT push to buy; it should deepen the conversation or gently confirm their situation.",
+      "push_caution (低い/中/高い): how much risk there is of coming across as pushy if we sell now.",
+      "caution_note: one concrete note on how to avoid pushing too hard.",
+      "Do not guarantee a sale. Do not invent facts not present in the reply.",
+      "",
+      "CONTEXT:",
+      JSON.stringify({
+        platform,
+        product: input.product || profile.product || "",
+        our_post: String(input.post || ""),
+        offer: input.offer || ""
+      }, null, 2),
+      "",
+      "READER REPLY:",
+      String(input.reply || "")
+    ].join("\n");
+  }
+
+  if (feature === "buzz-pattern") {
+    return [
+      ...shared,
+      "",
+      "TASK: Decompose the post and score how strongly it works as 保存型 / 共感型 / 案内型.",
+      "scores.save / scores.empathy / scores.guide are each 0-100.",
+      "dominant_type is the single strongest of 保存型 / 共感型 / 案内型.",
+      "strengths/weaknesses: concrete, about this exact post.",
+      "improvements: concrete, actionable rewrites of weak parts.",
+      "rewrite_suggestion: one improved version of the post that keeps the original claim, no bait.",
+      "",
+      "CONTEXT:",
+      JSON.stringify({
+        platform,
+        purpose: input.purpose || profile.purpose || "",
+        target: input.target || profile.target || "",
+        genre: profile.genre || ""
+      }, null, 2),
+      "",
+      "POST:",
+      String(input.post || "")
+    ].join("\n");
+  }
+
+  if (feature === "buzz-research") {
+    return [
+      ...shared,
+      "",
+      "TASK: Propose talk-generating themes for the given topic. This is an AI proposal only.",
+      "IMPORTANT: You have NO access to external SNS data or trends. Do not claim real data, view counts, or what is 'currently trending'.",
+      "notice: a one-line Japanese disclaimer that these are AI proposals, not measured trend data.",
+      "Propose 4-6 themes. For each: theme (short title), why (why a conversation naturally arises among the target), angle (the posting angle), example_opening (a natural first line for a post, no bait).",
+      "Themes must be specific to the given topic/target/purpose, not generic SNS-operation advice.",
+      "",
+      "CONTEXT:",
+      JSON.stringify({
+        platform,
+        topic: input.theme || input.topic || "",
+        period: input.period || "",
+        purpose: input.purpose || profile.purpose || "",
+        target: input.target || profile.target || "",
+        genre: profile.genre || ""
+      }, null, 2)
     ].join("\n");
   }
 

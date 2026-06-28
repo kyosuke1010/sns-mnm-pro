@@ -126,7 +126,7 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-const DIAGNOSIS_FEATURES = new Set(["viral", "ab-test"]);
+const DIAGNOSIS_FEATURES = new Set(["viral", "ab-test", "score", "buzz-pattern", "buzz-research"]);
 
 async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {
   if (feature === "viral" && !String(input.post || "").trim()) {
@@ -135,10 +135,19 @@ async function handleDiagnosis({ env, user, feature, input, profile, apiKey, mod
   if (feature === "ab-test" && (!String(input.postA || "").trim() || !String(input.postB || "").trim())) {
     throw new OpenAiSafeError("AI_INPUT_MISSING", "比較する投稿案A・Bを入力してください", 400);
   }
+  if (feature === "score" && !String(input.reply || "").trim()) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "相手の返信内容を入力してください", 400);
+  }
+  if (feature === "buzz-pattern" && !String(input.post || "").trim()) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "分析する投稿文を入力してください", 400);
+  }
+  if (feature === "buzz-research" && !String(input.theme || input.topic || "").trim()) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "調べたいテーマを入力してください", 400);
+  }
 
   const schema = outputSchema(feature);
   const prompt = buildDiagnosisPrompt(feature, input, profile);
-  const maxOutputTokens = feature === "ab-test" ? 3600 : 2800;
+  const maxOutputTokens = feature === "ab-test" ? 3600 : (feature === "buzz-research" ? 3600 : 2800);
   const response = await callOpenAiResponses({
     apiKey,
     model: model.model,
