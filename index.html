@@ -5360,15 +5360,17 @@
         await syncThreadsOAuthStatus({ silent: true });
         return;
       }
+      const reason = params.get("reason") || "";
       if (result === "connected") {
         await syncThreadsOAuthStatus({ silent: true });
         showToast("Threads連携が完了しました");
       } else if (result === "app_not_configured") {
         showToast("管理画面でMeta App IDとThreads App Secretを設定してください");
       } else if (result === "denied") {
-        showToast("Threads連携がキャンセルされました");
+        showToast(reason ? `Threads連携が拒否されました：${reason}` : "Threads連携がキャンセルされました");
       } else {
-        showToast("Threads連携に失敗しました。Meta設定と権限を確認してください");
+        showResult("#threadsApiStatus", `Threads連携に失敗しました。${reason ? `\n原因: ${reason}` : ""}\nMetaアプリ側のリダイレクトURI登録と、Threadsテスター登録（開発モード時）をご確認ください。`, true);
+        showToast(reason ? `Threads連携に失敗：${reason}`.slice(0, 80) : "Threads連携に失敗しました。Meta設定と権限を確認してください");
       }
       params.delete("threads_oauth");
       params.delete("reason");

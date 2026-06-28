@@ -45,7 +45,10 @@ export async function onRequestGet({ request, env }) {
     });
 
     return redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}threads_oauth=connected`);
-  } catch {
-    return redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}threads_oauth=failed`);
+  } catch (e) {
+    // Surface the underlying Meta/Threads error so the operator can see why the
+    // connection failed (e.g. redirect_uri mismatch, tester not added).
+    const reason = String(e?.message || "THREADS_OAUTH_FAILED").slice(0, 220);
+    return redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}threads_oauth=failed&reason=${encodeURIComponent(reason)}`);
   }
 }
