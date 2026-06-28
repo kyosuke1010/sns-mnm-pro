@@ -210,19 +210,48 @@
       padding: 22px;
       display: grid;
       gap: 16px;
-      align-content: start;
+      align-content: center;
+      justify-items: center;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(46, 137, 232, 0.22), transparent 62%),
+        rgba(6, 16, 28, 0.5);
     }
-    .hero-shot {
-      border-radius: 16px;
-      border: 1px solid rgba(78, 121, 153, 0.28);
-      overflow: hidden;
-      background: rgba(4, 11, 21, 0.72);
+    .hero-character {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      text-align: center;
     }
-    .hero-shot img {
-      width: 100%;
+    .character-badge {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 107, 255, 0.4);
+      background: rgba(141, 107, 255, 0.16);
+      color: #e7e0ff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .character-img {
+      width: min(320px, 78%);
+      height: auto;
       display: block;
-      object-fit: cover;
+      filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.5));
+      animation: character-float 5.5s ease-in-out infinite;
     }
+    @keyframes character-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .character-img { animation: none; }
+    }
+    .character-caption {
+      color: var(--soft);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 18em;
+    }
+    .character-caption strong { color: #fff; }
     .stat {
       border: 1px solid rgba(78, 121, 153, 0.26);
       border-radius: 14px;
@@ -637,8 +666,10 @@
       </section>
 
       <aside class="hero-side panel">
-        <div class="hero-shot">
-          <img src="./assets/sns-mnm-pro-sales-side-20260626.png" alt="SNS MNM-PRO サンプルイメージ">
+        <div class="hero-character">
+          <span class="character-badge">テスト販売中｜7日間無料</span>
+          <img src="./assets/sns-mnm-pro-character-20260628.png" alt="紅茶王子｜SNS MNM-PROの案内キャラクター" class="character-img">
+          <div class="character-caption"><strong>紅茶王子</strong>が、あなたのThreads運用を全力サポート。</div>
         </div>
       </aside>
     </section>
