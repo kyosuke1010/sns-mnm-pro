@@ -4064,7 +4064,22 @@
       const text = displayText(value).trim();
       if (!text) return "";
       const instructionLike = /(入力してください|返信してください|と返信|コメントしてください|コメント欄|DMください|キーワード返信|特典返信|無料配布|欲しい人|スイカ|suika|watermelon)/i;
-      return instructionLike.test(text) ? "" : text;
+      // 命令句だけ除去: drop only the clauses that contain an instruction/bait phrase
+      // and keep the rest of the profile text (previously the whole field was cleared).
+      return text
+        .split(/\n+/)
+        .map((line) => {
+          const clauses = line.split(/(?<=[、。！？])/);
+          return clauses
+            .filter((clause) => clause.trim() && !instructionLike.test(clause))
+            .join("")
+            .replace(/^[、。・\s]+/g, "")
+            .replace(/[、・\s]+$/g, "")
+            .trim();
+        })
+        .filter(Boolean)
+        .join("\n")
+        .trim();
     }
 
     function safeProfileForGeneration(profile = {}) {
