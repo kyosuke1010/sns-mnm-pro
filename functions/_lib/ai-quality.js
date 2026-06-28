@@ -64,6 +64,9 @@ export function retryInstruction(quality) {
   if (objective.includes("flat_rhythm")) {
     objectiveLines.push("- The sentence rhythm was flat. Mix short punchy lines with longer ones.");
   }
+  if (objective.includes("meta_explanation")) {
+    objectiveLines.push("- The body described what the tool does (e.g. 「〜余白を作ります」「会話導線を設計します」). The body must BE the post itself. Remove every process/meta sentence and write only what the reader would see.");
+  }
   return [
     "",
     "REGENERATION REQUIRED:",
@@ -96,6 +99,10 @@ export function inspectGeneratedText(text = "") {
   const bait = /(コメント欄に|コメントください|と返信|と書いて|返信してください|リプください|リプして|DMください|DM下さい|DMで送|キーワード返信|合言葉|「[^」]{1,10}」と(コメント|返信|送)|無料プレゼント|無料配布|特典を受け取|特典をお渡し|欲しい人は|ほしい人は)/;
   if (bait.test(body)) flags.push("bait");
 
+  // 2b. meta/process sentence: the tool describing what it does, instead of being the post.
+  const metaExplanation = /(余白を作りま|余白を残しま|流れを作りま|流れに整え|導線を(設計|作り|整え)|会話導線を|自然に話せるように(しま|整え)|話せる(余白|流れ)を|案内の前に[、,])/;
+  if (metaExplanation.test(body)) flags.push("meta_explanation");
+
   // 3. 具体アンカー: at least one concrete element (number, quote, real scene, specific moment).
   const concreteAnchor = /[0-9０-９]/.test(body)
     || /[「『][^」』]{2,}[」』]/.test(body)
@@ -114,6 +121,7 @@ export function inspectGeneratedText(text = "") {
 
   const hardFail = flags.includes("bait")
     || flags.includes("generic_ending")
+    || flags.includes("meta_explanation")
     || (flags.includes("no_concrete_anchor") && flags.includes("flat_rhythm"));
   return { flags, hardFail, concreteAnchor, rhythmVaried };
 }
