@@ -331,6 +331,12 @@
       line-height: 1.7;
       font-size: 14px;
     }
+    .feature-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
     .flow {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -629,7 +635,23 @@
           <h3>勝ちパターン辞書</h3>
           <p>反応が良かった投稿の型を保存し、次回以降のAI生成に参照できます。</p>
         </article>
+        <article class="feature">
+          <div class="feature-icon">予</div>
+          <h3>投稿予約メモ</h3>
+          <p>投稿予定日時と本文をメモとして管理し、コピー運用に対応します。Threadsへの自動投稿・予約投稿はProプランで対応予定です。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">守</div>
+          <h3>禁止・リスク表現の回避</h3>
+          <p>登録した禁止表現を避け、煽り・誇大・返信稼ぎなどのリスク表現を抑えてAIが生成します。安心して投稿づくりを進められます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">履</div>
+          <h3>生成履歴</h3>
+          <p>過去に生成した投稿を一覧で確認し、コピーや再利用、投稿管理への保存ができます。</p>
+        </article>
       </div>
+      <p class="feature-note">※画面内の数値・グラフは表示イメージです。実際のフォロワー数や増減は、Threads API連携後に取得した値を表示します。</p>
       <div class="pro-menu-block">
         <h3>Pro限定メニュー</h3>
         <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。</p>
