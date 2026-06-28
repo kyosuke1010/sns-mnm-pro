@@ -8,10 +8,13 @@ export const PHASE1_FEATURE_LABELS = {
   "bulk-generate": "一括生成",
   thread: "投稿分割設計",
   series: "投稿シリーズ生成",
-  rewrite: "ブラッシュアップ"
+  rewrite: "ブラッシュアップ",
+  cta: "会話導線設計",
+  viral: "投稿前スコア診断",
+  "ab-test": "投稿AB比較"
 };
 
-export function normalizeGenerationInput(feature, input = {}, profile = {}) {
+export function normalizeGenerationInput(feature, input = {}, profile = {}, options = {}) {
   const tone = input.tone || profile.tone || "親しみやすい";
   const postType = input.type || input.post_type || input.purpose || profile.purpose || "共感型";
   const toneProfile = resolveToneProfile(tone);
@@ -19,7 +22,7 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}) {
   const platform = normalizePlatform(input.channel || input.platform || profile.channels || "Threads");
   const count = normalizeCount(input.count, feature === "day-generate" ? 3 : (feature === "thread" ? 3 : 3));
   const theme = input.topic || input.theme || input.topics || input.source || input.post || "";
-  const inputUnderstanding = analyzeUserInput(feature, input, profile);
+  const inputUnderstanding = options.inputUnderstanding || analyzeUserInput(feature, input, profile);
 
   return {
     feature,
@@ -63,8 +66,8 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}) {
   };
 }
 
-export function buildGenerationPrompt(feature, input, profile, extraInstruction = "") {
-  const context = normalizeGenerationInput(feature, input, profile);
+export function buildGenerationPrompt(feature, input, profile, extraInstruction = "", options = {}) {
+  const context = normalizeGenerationInput(feature, input, profile, options);
   return [
     commonSystemPrompt(),
     "",
@@ -74,6 +77,8 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     "",
     postTypePrompt(context),
     "",
+    diversityPlanPrompt(feature, context),
+    "",
     fewShotPrompt(feature, context.platform),
     "",
     "USER AND MENU CONTEXT:",
@@ -82,6 +87,128 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     outputContract(feature),
     extraInstruction || ""
   ].filter(Boolean).join("\n");
+}
+
+// Named diversity assignment. Each candidate is given a specific framework,
+// rhythm, and ending so variety comes from explicit assignment, not chance.
+const DIVERSITY_FRAMEWORKS = [
+  "問題提起 → 共感 → 視点転換 → 具体場面 → 自然な問い",
+  "失敗談 → 気づき → 変えた行動 → 今の学び",
+  "比較(伸びない型 / 伸びる型) → 理由 → 今日の改善",
+  "あるある共感 → 原因の言語化 → 小さな一歩",
+  "誤解 → 本質 → 実践ステップ → 軽い保存導線",
+  "場面描写 → 迷い → 気づき → 小さな変化 → 読者への接続"
+];
+const DIVERSITY_RHYTHMS = [
+  "短文中心・余白多め",
+  "短文と中文を交互に混ぜる",
+  "問いかけを途中に差し込む",
+  "結論を先に出し、理由を後ろへ置く",
+  "一文の密度を上げ、無駄な説明を削る"
+];
+const DIVERSITY_ENDINGS = [
+  "読者が状況を話したくなる自然な問いで終える",
+  "後で見返したくなる保存導線で終える",
+  "必要な人だけプロフィール / 固定投稿へ軽く流して終える",
+  "次にやる一歩を一つだけ置いて終える",
+  "静かに言い切り、余白を残して終える"
+];
+
+function diversityCount(feature, context) {
+  if (feature === "rewrite") return 0;
+  if (feature === "cta") return 1;
+  if (feature === "day-generate") return 3;
+  return Math.max(1, Math.min(Number(context.post_count) || 1, 10));
+}
+
+function diversityCandidateLabel(feature, index) {
+  if (feature === "day-generate") return ["朝投稿", "昼投稿", "夜投稿"][index] || `${index + 1}回目`;
+  if (feature === "thread") return index === 0 ? "投稿1" : `リプ欄${index + 1}`;
+  if (feature === "series") return `${index + 1}日目`;
+  return `候補${index + 1}`;
+}
+
+function diversityPlanPrompt(feature, context) {
+  const count = diversityCount(feature, context);
+  if (count <= 0) return "";
+  const lines = [];
+  for (let i = 0; i < count; i++) {
+    const label = diversityCandidateLabel(feature, i);
+    const framework = DIVERSITY_FRAMEWORKS[i % DIVERSITY_FRAMEWORKS.length];
+    const rhythm = DIVERSITY_RHYTHMS[(i * 2 + 1) % DIVERSITY_RHYTHMS.length];
+    const ending = DIVERSITY_ENDINGS[(i * 3 + 2) % DIVERSITY_ENDINGS.length];
+    lines.push(`- ${label}: framework=「${framework}」 / rhythm=「${rhythm}」 / ending=「${ending}」`);
+  }
+  return [
+    "DIVERSITY PLAN (型の名指し割当):",
+    "Use the assignment below as the skeleton for each item. Do not reuse the same framework, rhythm, or ending across items.",
+    "Keep the body natural and faithful to input_understanding; the assignment guides structure, not wording.",
+    ...lines
+  ].join("\n");
+}
+
+// Diagnosis features (viral score / AB compare). These evaluate existing
+// posts; they do not generate a feed of new posts.
+export function buildDiagnosisPrompt(feature, input = {}, profile = {}) {
+  const platform = normalizePlatform(input.channel || input.platform || profile.channels || "Threads");
+  const shared = [
+    "You are the SNS MNM-PRO post diagnosis engine for Threads/X operators.",
+    "You evaluate how clearly a post communicates and how naturally it guides the reader.",
+    "Score on a 0-100 scale where higher means easier to understand and more likely to earn a natural reaction.",
+    "",
+    "Hard rules:",
+    "- Never promise or guarantee that a post will go viral, sell, or 必ず伸びる. This is a diagnosis, not a promise.",
+    "- Judge クラリティ(伝わりやすさ), 冒頭の引き, 共感, 具体性, 読みやすさ, 導線の自然さ.",
+    "- Penalize generic-advice endings, missing concrete anchors, flat sentence rhythm, and reply/keyword/DM/gift bait.",
+    "- Improvement suggestions must be concrete and actionable, written in natural Japanese.",
+    "- Any improved/recommended post you return must keep the original claim and not add unrelated CTA or bait.",
+    "- Return valid JSON only. No markdown fences.",
+    `- Target platform: ${platform}.`
+  ];
+
+  if (feature === "ab-test") {
+    return [
+      ...shared,
+      "",
+      "TASK: Compare post A and post B.",
+      "Score each one, decide which communicates better, and explain why in concrete terms.",
+      "If they are genuinely equal, winner is 引き分け.",
+      "recommended_post must be the stronger post lightly improved (keep its meaning).",
+      "",
+      "CONTEXT:",
+      JSON.stringify({
+        platform,
+        purpose: input.purpose || profile.purpose || "",
+        target: input.target || profile.target || "",
+        genre: profile.genre || ""
+      }, null, 2),
+      "",
+      "POST A:",
+      String(input.postA || ""),
+      "",
+      "POST B:",
+      String(input.postB || "")
+    ].join("\n");
+  }
+
+  return [
+    ...shared,
+    "",
+    "TASK: Diagnose a single post before it is published.",
+    "Give an overall_score, sub scores, strengths, weaknesses, concrete improvements, and risk flags.",
+    "improved_post must be a rewritten version that keeps the original claim but fixes the weaknesses.",
+    "",
+    "CONTEXT:",
+    JSON.stringify({
+      platform,
+      purpose: input.purpose || profile.purpose || "",
+      target: input.target || profile.target || "",
+      genre: input.genre || profile.genre || ""
+    }, null, 2),
+    "",
+    "POST:",
+    String(input.post || "")
+  ].join("\n");
 }
 
 function commonSystemPrompt() {
