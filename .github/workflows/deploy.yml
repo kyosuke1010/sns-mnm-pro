@@ -73,6 +73,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # No positional directory: wrangler reads pages_build_output_dir
-          # (./tmp/cloudflare-pages-publish) from wrangler.jsonc at the repo root.
-          command: pages deploy --project-name=sns-mnm-pro-prototype --branch=main
+          # Pass the assets directory explicitly. The first run failed with
+          # "Must specify a directory of assets to deploy" because wrangler did
+          # not pick up pages_build_output_dir from wrangler.jsonc in CI, so we
+          # give the directory as a positional argument instead.
+          command: pages deploy tmp/cloudflare-pages-publish --project-name=sns-mnm-pro-prototype --branch=main
