@@ -210,19 +210,48 @@
       padding: 22px;
       display: grid;
       gap: 16px;
-      align-content: start;
+      align-content: center;
+      justify-items: center;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(46, 137, 232, 0.22), transparent 62%),
+        rgba(6, 16, 28, 0.5);
     }
-    .hero-shot {
-      border-radius: 16px;
-      border: 1px solid rgba(78, 121, 153, 0.28);
-      overflow: hidden;
-      background: rgba(4, 11, 21, 0.72);
+    .hero-character {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      text-align: center;
     }
-    .hero-shot img {
-      width: 100%;
+    .character-badge {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(141, 107, 255, 0.4);
+      background: rgba(141, 107, 255, 0.16);
+      color: #e7e0ff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .character-img {
+      width: min(320px, 78%);
+      height: auto;
       display: block;
-      object-fit: cover;
+      filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.5));
+      animation: character-float 5.5s ease-in-out infinite;
     }
+    @keyframes character-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .character-img { animation: none; }
+    }
+    .character-caption {
+      color: var(--soft);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 18em;
+    }
+    .character-caption strong { color: #fff; }
     .stat {
       border: 1px solid rgba(78, 121, 153, 0.26);
       border-radius: 14px;
@@ -330,6 +359,51 @@
       color: var(--muted);
       line-height: 1.7;
       font-size: 14px;
+    }
+    .feature-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .test-sale-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 14px auto 0;
+      max-width: 1120px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124, 160, 255, .18), rgba(141, 107, 255, .18));
+      border: 1px solid rgba(124, 160, 255, .34);
+      font-size: 13px;
+    }
+    .test-sale-banner strong {
+      flex: 0 0 auto;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--violet, #8d6bff);
+      color: #fff;
+      font-size: 12px;
+    }
+    .stat .strike {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      text-decoration: line-through;
+      font-weight: 600;
+    }
+    .release-tag {
+      margin-left: 8px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: rgba(255, 191, 71, .14);
+      border: 1px solid rgba(255, 191, 71, .3);
+      color: #ffe6a8;
+      font-size: 11px;
+      font-weight: 800;
+      vertical-align: middle;
     }
     .flow {
       display: grid;
@@ -545,9 +619,14 @@
       <div class="top-actions">
         <a class="ghost" href="/login">ログイン</a>
         <a class="ghost" href="/?page=billing">プランを見る</a>
-        <a class="primary violet" href="#apply-form">今すぐ申し込む</a>
+        <a class="primary violet" href="#apply-form">7日間無料で試す</a>
       </div>
     </header>
+
+    <div class="test-sale-banner" role="status">
+      <strong>テスト販売中</strong>
+      <span>今だけ Lite ¥1,980（通常 ¥3,980）／7日間無料でお試しいただけます。</span>
+    </div>
 
     <section class="hero">
       <section class="hero-copy panel">
@@ -566,29 +645,31 @@
             <small>AI投稿文生成、1日分生成、リライト、投稿管理</small>
           </div>
           <div class="stat">
-            <span>Liteプラン</span>
-            <strong>3,980円</strong>
+            <span>Liteプラン（テスト販売価格）</span>
+            <strong>1,980円<small class="strike">3,980円</small></strong>
             <small>Threads API連携とフォロワー数管理を利用可能</small>
           </div>
           <div class="stat">
             <span>Proプラン</span>
-            <strong>5,200円</strong>
-            <small>保存・返信・勝ちパターン辞書などの高度分析に対応</small>
+            <strong>9月下旬予定</strong>
+            <small>保存・返信・勝ちパターン辞書などの高度分析（9月下旬リリース予定）</small>
           </div>
           <div class="stat">
             <span>無料トライアル</span>
-            <strong>3日間</strong>
-            <small>まずは購入前に画面と導線を試せます</small>
+            <strong>7日間</strong>
+            <small>まずは購入前に画面と導線をじっくり試せます</small>
           </div>
         </div>
         <div class="cta-row">
-          <a class="primary violet" href="#apply-form">無料トライアルに申し込む</a>
+          <a class="primary violet" href="#apply-form">7日間無料で試す</a>
         </div>
       </section>
 
       <aside class="hero-side panel">
-        <div class="hero-shot">
-          <img src="./assets/sns-mnm-pro-sales-side-20260626.png" alt="SNS MNM-PRO サンプルイメージ">
+        <div class="hero-character">
+          <span class="character-badge">テスト販売中｜7日間無料</span>
+          <img src="./assets/sns-mnm-pro-character-20260628.png" alt="紅茶王子｜SNS MNM-PROの案内キャラクター" class="character-img">
+          <div class="character-caption"><strong>紅茶王子</strong>が、あなたのThreads運用を全力サポート。</div>
         </div>
       </aside>
     </section>
@@ -629,10 +710,26 @@
           <h3>勝ちパターン辞書</h3>
           <p>反応が良かった投稿の型を保存し、次回以降のAI生成に参照できます。</p>
         </article>
+        <article class="feature">
+          <div class="feature-icon">予</div>
+          <h3>投稿予約メモ</h3>
+          <p>投稿予定日時と本文をメモとして管理し、コピー運用に対応します。Threadsへの自動投稿・予約投稿はProプランで対応予定です。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">守</div>
+          <h3>禁止・リスク表現の回避</h3>
+          <p>登録した禁止表現を避け、煽り・誇大・返信稼ぎなどのリスク表現を抑えてAIが生成します。安心して投稿づくりを進められます。</p>
+        </article>
+        <article class="feature">
+          <div class="feature-icon">履</div>
+          <h3>生成履歴</h3>
+          <p>過去に生成した投稿を一覧で確認し、コピーや再利用、投稿管理への保存ができます。</p>
+        </article>
       </div>
+      <p class="feature-note">※画面内の数値・グラフは表示イメージです。実際のフォロワー数や増減は、Threads API連携後に取得した値を表示します。</p>
       <div class="pro-menu-block">
-        <h3>Pro限定メニュー</h3>
-        <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。</p>
+        <h3>Pro限定メニュー <span class="release-tag">9月下旬リリース予定</span></h3>
+        <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。<strong>Proプランは9月下旬リリース予定です。</strong>テスト販売中はLiteプランをご利用いただけます。なお、Pro機能はPro課金ユーザーのみご利用いただけます。</p>
         <div class="pro-chip-grid">
           <div class="pro-chip">投稿シリーズ生成</div>
           <div class="pro-chip">スレッド生成</div>
@@ -692,9 +789,9 @@
           <label>メールアドレス<input name="email" type="email" required placeholder="you@example.com"></label>
           <label>メールアドレス確認<input name="emailConfirm" type="email" required placeholder="you@example.com"></label>
           <label>希望プラン<select name="plan" required>
-            <option value="無料トライアル">無料トライアル</option>
-            <option value="Liteプラン">Liteプラン 3,980円/月</option>
-            <option value="Proプラン">Proプラン 5,200円/月</option>
+            <option value="無料トライアル">7日間無料トライアル</option>
+            <option value="Liteプラン">Liteプラン 1,980円/月（テスト販売価格）</option>
+            <option value="Proプラン" disabled>Proプラン（9月下旬リリース予定）</option>
           </select></label>
           <label>利用目的<select name="purpose" id="purpose" required>
             <option value="Threads投稿を効率化したい">Threads投稿を効率化したい</option>
@@ -719,10 +816,10 @@
           <label class="check"><input type="checkbox" required>決済確認後、管理者がライセンスキーを手動発行することを理解しました</label>
         </div>
 
-        <div class="notice">Stripe Payment Links は後から設定できます。今は公開導線と申し込み取得の形を先に固めています。実運用ではここから決済ページへ案内します。</div>
+        <div class="notice"><strong>7日間無料・いつでも解約可能</strong>：お申し込み後すぐにご利用開始いただけます。無料期間内（7日以内）に解約された場合、料金は一切発生しません。解約はいつでも support@koucha-lab.com へのご連絡で承ります。決済はPayPalを予定しています（準備中）。</div>
         <div class="error" id="error"></div>
         <div class="cta-row">
-          <button class="primary violet" id="submitBtn" type="button">お申し込み内容を送信</button>
+          <button class="primary violet" id="submitBtn" type="button">7日間無料で試す</button>
           <a class="ghost" href="/login">すでに購入済みの方はこちら</a>
         </div>
       </section>

@@ -1,7 +1,7 @@
 import { createSession, SESSION_SCOPE_USER } from "../../_lib/auth.js";
 import { hashLicenseKey, hashPassword } from "../../_lib/security.js";
 
-const TRIAL_DAYS = 3;
+const TRIAL_DAYS = 7;
 
 export async function onRequestPost({ request, env }) {
   try {
