@@ -1,0 +1,78 @@
+name: Deploy to Cloudflare Pages
+
+# Auto-deploy the site to the Cloudflare Pages project on every push to main
+# (and on manual run). This mirrors the existing manual flow: assemble the
+# deployable files into the configured pages_build_output_dir, then
+# `wrangler pages deploy`.
+#
+# Required repository secrets
+#   (Settings > Secrets and variables > Actions > New repository secret):
+#     CLOUDFLARE_API_TOKEN  - a token with the "Cloudflare Pages — Edit" permission
+#     CLOUDFLARE_ACCOUNT_ID - your Cloudflare account ID
+#
+# If a push deploys to a *.pages.dev preview URL instead of the real site,
+# the project's Production branch is not "main": either set it to "main" in
+# Pages > Settings, or change `--branch=main` below to match it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble Pages output directory
+        run: |
+          set -euo pipefail
+          OUT="tmp/cloudflare-pages-publish"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          # Copy the deployable site (static pages + Pages Functions),
+          # excluding dev-only files, docs, local state, and config.
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='tmp' \
+            --exclude='tmp-*' \
+            --exclude='docs' \
+            --exclude='scripts' \
+            --exclude='migrations' \
+            --exclude='*.md' \
+            --exclude='*.txt' \
+            --exclude='wrangler.jsonc' \
+            --exclude='wrangler.example.jsonc' \
+            --exclude='canva-*' \
+            --exclude='chatgpt-*' \
+            ./ "$OUT/"
+          echo "Top-level of deploy output:"
+          ls -la "$OUT"
+          if [ ! -d "$OUT/functions" ]; then
+            echo "ERROR: functions/ is missing from the deploy output" >&2
+            exit 1
+          fi
+          if [ ! -f "$OUT/index.html" ]; then
+            echo "ERROR: index.html is missing from the deploy output" >&2
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # No positional directory: wrangler reads pages_build_output_dir
+          # (./tmp/cloudflare-pages-publish) from wrangler.jsonc at the repo root.
+          command: pages deploy --project-name=sns-mnm-pro-prototype --branch=main
