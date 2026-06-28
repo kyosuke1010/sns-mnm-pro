@@ -301,14 +301,27 @@ function featurePrompt(feature) {
     ],
     cta: [
       "FEATURE: Conversation path design.",
-      "Use the source post as the base and reshape it lightly so readers can naturally share their problem, situation, self-introduction, or experience.",
-      "This is not just adding one final question. Understand the source claim, reader problem, talk-theme keyword, and conversation goal first.",
-      "Preserve the source post meaning and temperature. Only adjust flow when it helps the conversation entry feel natural.",
-      "The body must be a completed post. Put the natural question inside the body or as the final line.",
-      "Do not output reply scenario, first reply, second reply, decline reply, debug notes, profile context, model name, or API information.",
-      "Avoid explicit comment bait, keyword reply bait, DM bait, free gift bait, and repeated CTA.",
-      "If the goal is self-introduction, ask for the reader's theme or genre. If product guidance, ask what they want to organize before buying or applying. If save guidance, make the saved point clear.",
-      "Return one post in posts array. Its body must be the completed post only. Use cta only when there is a short optional CTA candidate."
+      "Goal: rewrite the source post into one complete, ready-to-publish post whose final 1-2 lines weave in a natural question that makes the READER want to share their own experience.",
+      "",
+      "STEP 1 - Lock the reader and the topic before writing:",
+      "- Read the source post and decide post_topic (what this post is about) and reader (the everyday person who would read it).",
+      "- The reader is the post's audience (e.g. a person who struggles with night snacking), NOT the SNS operator.",
+      "",
+      "STEP 2 - Build the closing question:",
+      "- The question MUST ask about the reader's own experience or situation regarding post_topic.",
+      "- Example: a post about 夜の間食 must ask about the reader's own night eating or evening/daytime routine (e.g. 「あなたは夜、どんなときに手が伸びやすいですか？」).",
+      "- conversation_goal (悩みを聞く / 商品案内につなげる / 保存してもらう etc.) and the talk-theme keyword only change the ANGLE of the question. They must NEVER change who the reader is.",
+      "- FORBIDDEN even when conversation_goal is 商品案内: operator-perspective questions about the act of posting or selling, such as 「案内するとき売り込みっぽく見えて止まりますか？」. Ask the reader about their own situation first; never ask the operator about their marketing.",
+      "- The question must be answerable only by readers of THIS specific post. A generic question that could be pasted onto any other post is a failure.",
+      "",
+      "STEP 3 - Write the body:",
+      "- body is a single, completed post that reads as one natural Japanese text, not the source post with a question bolted on.",
+      "- Preserve the source claim, metaphor, and temperature.",
+      "- NEVER write process/meta sentences that describe what the tool is doing, such as 「〜余白を作ります」「〜の流れを作ります」「会話導線を設計します」「自然に話せるように整えます」「案内の前に…」. The body is the post itself, not a description of it.",
+      "- Do not output reply scenario, first/second/decline reply, debug notes, profile context, model name, or API information.",
+      "- Avoid comment bait, keyword-reply bait, DM bait, free-gift bait, and repeated CTA.",
+      "",
+      "Return one post in posts array. body must be the completed post (with the question inside it). Leave cta empty unless there is a genuinely separate short optional CTA; never duplicate the body's question into cta."
     ],
     rewrite: [
       "FEATURE: Brush-up existing post.",
@@ -378,6 +391,27 @@ function fewShotPrompt(feature, platform) {
     "3投稿目: 解決策を伝えることが必要です。",
     "This is just role labels with similar bodies and must be rejected."
   ].join("\n");
+  const cta = [
+    "GOOD cta example — source post about 夜の間食 (night snacking):",
+    "夜の間食、ダメだと分かっててもやめられないですよね。",
+    "",
+    "あれ、意志が弱いからじゃなくて、夕方からの過ごし方で決まっていることが多いです。",
+    "昼を軽くしすぎた日ほど、夜にガクッときます。",
+    "",
+    "あなたは夜、どんなときにいちばん手が伸びやすいですか？仕事終わり、寝る前、なんとなくの時間…どれが近いか教えてください。",
+    "",
+    "Why this is good: the closing question asks the READER about their own night eating. It only fits a night-snacking post.",
+    "",
+    "BAD cta pattern 1 (operator-perspective question):",
+    "案内するとき、売り込みっぽく見えそうで止まることありますか？  <- asks the operator about marketing, not the reader about the topic. REJECT.",
+    "",
+    "BAD cta pattern 2 (meta/process sentence in body):",
+    "案内の前に、言いにくさや迷いを話せる余白を作ります。  <- describes what the tool does instead of being the post. REJECT.",
+    "",
+    "BAD cta pattern 3 (generic question reusable on any post):",
+    "今いちばん気になっていることはありますか？  <- not tied to this post's topic. REJECT."
+  ].join("\n");
+  if (feature === "cta") return cta;
   if (["day-generate", "thread", "series"].includes(feature)) return [threads, thread].join("\n\n");
   if (platform === "X") return x;
   return [threads, x].join("\n\n");

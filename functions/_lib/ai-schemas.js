@@ -154,7 +154,13 @@ function ctaSchema() {
     type: "object",
     additionalProperties: false,
     properties: {
+      reader: { type: "string" },
+      post_topic: { type: "string" },
+      hook: { type: "string" },
       body: { type: "string" },
+      concrete_scene: { type: "string" },
+      reader_emotion: { type: "string" },
+      question: { type: "string" },
       cta: { type: "string" },
       cta_type: { type: "string" },
       aim: { type: "string" },
@@ -164,7 +170,8 @@ function ctaSchema() {
       quality_score: { type: "number" }
     },
     required: [
-      "body", "cta", "cta_type", "aim", "platform_note",
+      "reader", "post_topic", "hook", "body", "concrete_scene", "reader_emotion",
+      "question", "cta", "cta_type", "aim", "platform_note",
       "caution_flags", "self_check", "quality_score"
     ]
   };
