@@ -1304,6 +1304,13 @@
     // Menus whose generation is not wired to a real backend yet. Shown as 準備中.
     // reply (DM) and conversion (funnel data) depend on Phase 2-B, so they stay 準備中.
     const comingSoonFeatures = new Set(["reply", "conversion"]);
+    // Threads連携は、購入者が自分のThreadsを繋ぐにはMeta App Review（threads_basic）の
+    // 承認が必要。承認までは購入者には「順次開放（審査申請中）」と案内し、管理者だけ
+    // 実接続できる。承認されたら THREADS_PUBLIC_BETA を true にするだけで全員へ開放。
+    const THREADS_PUBLIC_BETA = false;
+    function threadsConnectAvailable() {
+      return isRealAdmin() || THREADS_PUBLIC_BETA;
+    }
     function isServerAiFeature(feature) {
       return serverAiFeatures.has(feature);
     }
@@ -3405,7 +3412,8 @@
             <div class="actions"><button class="primary" type="button" id="saveApiBtn">保存</button><button class="ghost-btn" type="button" id="testApiBtn">接続テスト</button><span class="muted" id="apiStatus">${state.apiTested ? "接続成功" : state.apiKeyLast4 ? `登録済み：****${esc(state.apiKeyLast4)}` : ""}</span></div>
           </section>
           <section class="panel">
-            <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectionLabel()}</span></div>
+            <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
+            ${threadsConnectAvailable() ? "" : `<div class="notice"><strong>Threads連携は順次開放中です（Meta審査申請中）。</strong><br>承認が下り次第、ワンタップ連携を開放します。AI投稿生成・診断・投稿管理などはご自身のOpenAI APIキーで今すぐすべてご利用いただけます。</div>`}
             <div class="notice">購入者はMeta App ID / Threads App Secret / Access Token / Threads User IDを手入力する必要はありません。「Threadsと連携」ボタンからMeta認証へ進むだけで接続できます。</div>
             <div class="notice">接続対象SNS：Threads / Instagram <strong>${esc(dedicatedSnsAccount.threads)}</strong><br>Metaログイン用メール：<strong>${esc(dedicatedSnsAccount.email)}</strong><br>運用キャラ：${esc(dedicatedSnsAccount.character)}。旧アカウントで発行したTokenは使わず、新アカウントで再連携してください。</div>
             <div class="threads-status">
@@ -3418,14 +3426,14 @@
               <div class="mini-stat"><span>再取得案内</span><strong>${state.threads.connectionStatus === "expired" ? "必須" : state.threads.reconnectCritical ? "強く推奨" : state.threads.reconnectRecommended ? "推奨" : "通常"}</strong></div>
             </div>
             ${state.threads.connectionStatus === "expired" ? `<div class="notice error">Threadsトークンの期限が切れています。「Threadsと連携」から再連携してください。</div>` : state.threads.reconnectCritical ? `<div class="notice error">Threadsトークン期限が7日以下です。再連携を強くおすすめします。</div>` : state.threads.reconnectRecommended ? `<div class="notice">Threadsトークン期限が14日以下です。期限切れ前に「トークン更新」または「Threadsと再連携」を行ってください。</div>` : ""}
-            <div class="actions">
+            ${threadsConnectAvailable() ? `<div class="actions">
               <a class="primary" id="connectThreadsOAuthBtn" href="/api/threads/oauth/start">Threadsと連携</a>
               <button class="ghost-btn" type="button" id="refreshThreadsOAuthBtn">トークン更新</button>
               <button class="ghost-btn" type="button" id="syncThreadsStatusBtn">連携状態を更新</button>
               <button class="ghost-btn" type="button" id="fetchFollowersBtn">フォロワー数取得テスト</button>
               <button class="ghost-btn" type="button" id="fetchPostsBtn">投稿一覧取得テスト</button>
               <button class="ghost-btn" type="button" id="disconnectThreadsBtn">連携解除</button>
-            </div>
+            </div>${isRealAdmin() && !THREADS_PUBLIC_BETA ? `<div class="notice">管理者のみ表示：購入者には現在この連携ボタンは出していません（審査承認後に開放）。</div>` : ""}` : `<div class="actions"><button class="primary" type="button" disabled style="opacity:.55;cursor:not-allowed">Threadsと連携（順次開放）</button></div>`}
             <div class="result-box" id="threadsApiStatus">${threadsStatusNotice()}</div>
             <div class="notice">Access Tokenは全文表示せず、保存後は末尾4文字のみ表示します。長期トークンは通常60日有効です。期限前に再取得案内を表示します。</div>
             <div class="notice">X API連携は後続対応予定です。初期版ではX向け投稿生成、短文化、コピー、予約メモ管理に対応しています。</div>
@@ -3878,8 +3886,10 @@
       const ring = Math.min(100, Math.max(6, Math.abs(Number(growth)) / 30 * 100)).toFixed(0);
       return `<section class="page active"><div class="page-shell compact-shell">
         <section class="panel">
-          <div class="panel-head"><div><h2>フォロワー数管理</h2><p>Liteプランで利用できるThreads API連携の基本管理です。</p></div><span class="pill">${threadsConnectionLabel()}</span></div>
-          ${connected ? "" : `<div class="notice error">Threads API連携が未設定です。<br>設定画面でThreads API接続テストを完了すると、フォロワー数管理が利用できます。</div>`}
+          <div class="panel-head"><div><h2>フォロワー数管理</h2><p>Liteプランで利用できるThreads API連携の基本管理です。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
+          ${connected ? "" : (threadsConnectAvailable()
+            ? `<div class="notice error">Threads API連携が未設定です。<br>設定画面で「Threadsと連携」を完了すると、フォロワー数管理が利用できます。</div>`
+            : `<div class="notice"><strong>フォロワー数管理（Threads連携）は順次開放中です。</strong><br>Metaの審査承認後に開放します。AI投稿生成・診断・投稿管理は今すぐすべてご利用いただけます。</div>`)}
           <div class="analytics-cards">
             <div class="analytics-card">
               <div><span>Threads API接続状態</span><strong>${threadsConnectionLabel()}</strong><small>取得元：Threadsアカウント</small></div>
