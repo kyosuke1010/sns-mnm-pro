@@ -40,7 +40,18 @@ export async function onRequestPost({ request, env }) {
 
     // Understand the input with a single LLM pass (regex fallback on failure),
     // then reuse that understanding for the context and every prompt build.
-    const { understanding } = await understandInput({ apiKey: settings.apiKey, model, feature, input, profile });
+    const { understanding, source: understandingSource } = await understandInput({ apiKey: settings.apiKey, model, feature, input, profile });
+    if (env.AI_DEBUG === "1") {
+      console.log("[ai-debug] understanding", JSON.stringify({
+        feature,
+        source: understandingSource,
+        has_post: Boolean(String(input.post || input.source || input.text || "").trim()),
+        main_claim: understanding.main_claim,
+        reader_problem: understanding.reader_problem,
+        key_concept: understanding.key_concept,
+        source_excerpt: understanding.source_excerpt
+      }));
+    }
     const genOptions = { inputUnderstanding: understanding };
     const context = normalizeGenerationInput(feature, input, profile, genOptions);
     const schema = outputSchema(feature);

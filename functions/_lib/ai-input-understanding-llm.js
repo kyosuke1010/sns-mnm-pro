@@ -73,6 +73,16 @@ function buildUnderstandingPrompt(feature, input, profile) {
     product: profile.product || "",
     sales_tone: profile.salesTone || input.sales_intensity || ""
   };
+  const ctaNote = feature === "cta"
+    ? [
+        "",
+        "IMPORTANT for this feature (conversation path design):",
+        "- source_text is the actual post. Its subject IS the topic. Analyze that topic, not SNS-operation generalities.",
+        "- keyword and conversation_goal only set the ANGLE of the closing question. They MUST NOT change the topic.",
+        "- Example: if source_text is about 夜の間食 (night snacking), main_claim / reader_problem / key_concept must be about night snacking / eating habits — never about 投稿が続かない, ネタ切れ, or 商品案内 just because the keyword says 案内/継続.",
+        "- best_generation_angle must require the closing question to ask the reader about their own experience of the post's topic."
+      ].join("\n")
+    : "";
   return [
     "You analyze a Japanese SNS operator's input before post generation.",
     "Read the input meaning first. Do not invent facts that are not implied by the input.",
@@ -90,12 +100,14 @@ function buildUnderstandingPrompt(feature, input, profile) {
     "- risk_points: array of risks (reply-bait, gift-bait, external-link push, exaggeration). Empty array if none.",
     "- best_generation_angle: the single best angle to generate from, faithful to the input.",
     "",
+    "When source_text is present, it is the primary subject; keyword/purpose/target only add nuance and must not override the topic.",
     "If source_text is empty, infer from theme/keyword/purpose/target instead.",
     "All text fields must be natural Japanese.",
+    ctaNote,
     "",
     "INPUT:",
     JSON.stringify(payload, null, 2)
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function mergeUnderstanding(base, llm) {

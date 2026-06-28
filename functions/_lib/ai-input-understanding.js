@@ -8,8 +8,14 @@ export function analyzeUserInput(feature = "", input = {}, profile = {}) {
   const analysisBase = sourceText || themeText || keywordText || purposeText || targetText || "";
   const combined = [analysisBase, themeText, keywordText, targetText, productText, purposeText].join("\n");
 
-  const readerProblem = inferReaderProblem(combined);
-  const keyConcept = inferKeyConcept(combined, keywordText, purposeText);
+  // When a real source post exists, anchor the topic on it. The talk-theme
+  // keyword (継続/案内 etc.) only changes the conversation angle and must NOT
+  // hijack reader_problem / key_concept / main_claim away from the post topic.
+  const hasSource = Boolean(sourceText.trim());
+  const topicBase = hasSource ? sourceText : combined;
+
+  const readerProblem = inferReaderProblem(topicBase, hasSource);
+  const keyConcept = inferKeyConcept(topicBase, hasSource ? "" : keywordText, hasSource ? "" : purposeText, hasSource);
   const desiredAction = inferDesiredAction(combined, purposeText, keywordText);
   const riskPoints = inferRiskPoints(combined);
   const metaphor = inferMetaphorOrUniqueExpression(analysisBase);
@@ -65,7 +71,7 @@ function inferMainClaim(base = "", theme = "", concept = "") {
   return truncate(preferred || sentences[0] || text, 120);
 }
 
-function inferReaderProblem(text = "") {
+function inferReaderProblem(text = "", hasSource = false) {
   const value = String(text || "");
   if (/ネタ|書けない|文章化|ゼロから|構成/.test(value)) return "投稿ネタや構成を毎回ゼロから考えて手が止まる";
   if (/AI|違和感|しっくり|自分の言葉|なんか違う/.test(value)) return "AI文が自分の言葉や読者の悩みに合わず、使いにくい";
@@ -73,6 +79,14 @@ function inferReaderProblem(text = "") {
   if (/反応|いいね|保存|読まれ|問い合わせ|申込/.test(value)) return "投稿しても反応や次の行動につながらない";
   if (/商品|サービス|案内|売り込み|営業|価格|効果/.test(value)) return "商品やサービスを自然に案内できず、売り込みっぽく見える不安がある";
   if (/設計|導線|型|流れ/.test(value)) return "投稿前の設計や導線が曖昧で、何をどう伝えるか迷っている";
+  // A source post exists but matches no SNS-operation bucket: keep the problem
+  // anchored on the post topic instead of falling back to a posting-ops theme.
+  if (hasSource) {
+    const topic = firstMeaningfulSentence(value);
+    return topic
+      ? `「${topic}」というテーマで、読者が自分の状況や経験を重ねにくい`
+      : "投稿テーマについて、読者が自分の状況を重ねにくい";
+  }
   return "投稿で何をどう伝えれば読者が動きやすいか迷っている";
 }
 
@@ -95,7 +109,7 @@ function inferDesiredAction(text = "", purpose = "", keyword = "") {
   return "読者が自分の状況を整理し、次に見るポイントが分かるようにする";
 }
 
-function inferKeyConcept(text = "", keyword = "", purpose = "") {
+function inferKeyConcept(text = "", keyword = "", purpose = "", hasSource = false) {
   const combined = `${text} ${keyword} ${purpose}`;
   if (/型|かたち|テンプレ|地図|設計|流れ/.test(combined)) return "先に型や設計を決めてから投稿を作る";
   if (/悩み|言語化|読者/.test(combined)) return "読者の悩みを先に言語化する";
@@ -103,6 +117,10 @@ function inferKeyConcept(text = "", keyword = "", purpose = "") {
   if (/導線|CTA|返信|保存|プロフィール/.test(combined)) return "読後の行動導線を自然に置く";
   if (/AI|違和感|自分の言葉/.test(combined)) return "AIに任せる前に、誰に何を伝えるかを決める";
   if (/売り込み|案内|商品|サービス/.test(combined)) return "商品説明より先に読者の困りごとを共有する";
+  if (hasSource) {
+    const topic = firstMeaningfulSentence(text);
+    return topic ? `「${topic}」について、読者自身の体験を引き出す` : "投稿テーマについて、読者自身の体験を引き出す";
+  }
   return keyword || purpose || "読者の悩みから投稿の流れを作る";
 }
 
@@ -149,11 +167,22 @@ function inferBestGenerationAngle(feature, context) {
   if (feature === "series") return `「${claim}」を複数日に分け、問題提起から解決まで別角度で進める`;
   if (feature === "bulk-generate") return `「${claim}」から共感・保存・導線など別角度の候補を作る`;
   if (["viral", "ab-test", "buzz-pattern", "buzz-research"].includes(feature)) return `入力文の文脈を見て、リスクと改善案を断定せず提示する`;
-  if (feature === "cta") return `元投稿の主張を保持し、会話目的と話しかけテーマに合わせて自然に話したくなる流れへ整える`;
+  if (feature === "cta") {
+    const topic = firstMeaningfulSentence(context.sourceText || claim) || claim;
+    return `投稿テーマ「${topic}」はそのまま保ち、締めの問いは読者自身の「${topic}」についての体験・状況を聞く。会話目的と話しかけテーマは問いの角度だけを変える`;
+  }
   return `「${claim}」を読者の悩みから投稿本文へ落とし込む`;
 }
 
 function truncate(value = "", max = 120) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   return text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
+function firstMeaningfulSentence(text = "") {
+  const sentence = String(text || "")
+    .split(/[。\n!?！？]/)
+    .map((item) => item.trim())
+    .filter(Boolean)[0] || "";
+  return truncate(sentence, 40);
 }
