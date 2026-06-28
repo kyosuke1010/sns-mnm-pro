@@ -1,9 +1,8 @@
-import { getSessionUser, SESSION_SCOPE_USER } from "../../../_lib/auth.js";
-import { connectionView, getThreadsAppSettings, json } from "../../../_lib/threads-oauth.js";
+import { connectionView, getThreadsAppSettings, getThreadsSessionUser, json } from "../../../_lib/threads-oauth.js";
 
 export async function onRequestGet({ request, env }) {
   try {
-    const user = await getSessionUser(env, request, SESSION_SCOPE_USER);
+    const user = await getThreadsSessionUser(env, request);
     const row = await env.DB.prepare(`
       SELECT auth_type, threads_user_id, access_token_last4, token_expires_at,
              connection_status, last_tested_at, last_synced_at, oauth_connected_at

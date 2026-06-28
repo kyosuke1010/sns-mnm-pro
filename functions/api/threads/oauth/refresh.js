@@ -1,10 +1,9 @@
-import { getSessionUser, SESSION_SCOPE_USER } from "../../../_lib/auth.js";
 import { decryptString, encryptString, last4 } from "../../../_lib/security.js";
-import { connectionView, json, refreshLongLivedToken, tokenDates } from "../../../_lib/threads-oauth.js";
+import { connectionView, getThreadsSessionUser, json, refreshLongLivedToken, tokenDates } from "../../../_lib/threads-oauth.js";
 
 export async function onRequestPost({ request, env }) {
   try {
-    const user = await getSessionUser(env, request, SESSION_SCOPE_USER);
+    const user = await getThreadsSessionUser(env, request);
     const row = await env.DB.prepare(`
       SELECT id, access_token_encrypted, token_expires_at, token_refresh_after_at
       FROM threads_connections

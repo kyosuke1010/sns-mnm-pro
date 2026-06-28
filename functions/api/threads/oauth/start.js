@@ -1,9 +1,9 @@
-import { AuthError, getSessionUser, SESSION_SCOPE_USER } from "../../../_lib/auth.js";
-import { callbackUrl, getThreadsAppSettings, json, newOAuthState, redirect, THREADS_AUTHORIZE_URL } from "../../../_lib/threads-oauth.js";
+import { AuthError } from "../../../_lib/auth.js";
+import { callbackUrl, getThreadsAppSettings, getThreadsSessionUser, json, newOAuthState, redirect, THREADS_AUTHORIZE_URL } from "../../../_lib/threads-oauth.js";
 
 export async function onRequestGet({ request, env }) {
   try {
-    const user = await getSessionUser(env, request, SESSION_SCOPE_USER);
+    const user = await getThreadsSessionUser(env, request);
     const settings = await getThreadsAppSettings(env, { includeSecret: false });
     if (!settings.appId) {
       return json({

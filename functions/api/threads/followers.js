@@ -1,6 +1,5 @@
-import { getAppSessionUser } from "../../_lib/auth.js";
 import { decryptString } from "../../_lib/security.js";
-import { connectionView, json } from "../../_lib/threads-oauth.js";
+import { connectionView, getThreadsSessionUser, json } from "../../_lib/threads-oauth.js";
 
 export async function onRequestPost({ request, env }) {
   const payload = await safeJson(request);
@@ -54,7 +53,7 @@ async function resolveConnection({ request, env, payload }) {
     return { ok: true, threadsUserId: payload.threadsUserId, accessToken: payload.accessToken, row: { connection_status: "connected", threads_user_id: payload.threadsUserId } };
   }
   try {
-    const user = await getAppSessionUser(env, request);
+    const user = await getThreadsSessionUser(env, request);
     const row = await env.DB.prepare(`
       SELECT threads_user_id, access_token_encrypted, access_token_last4, token_expires_at,
              connection_status, auth_type, last_tested_at, last_synced_at, oauth_connected_at,
