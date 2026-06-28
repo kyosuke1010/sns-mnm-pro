@@ -246,6 +246,42 @@
       font-weight: 700;
     }
     .soon-banner b { color: #e7f0ff; }
+    .demo-switcher {
+      margin: 0 0 12px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(141, 107, 255, .10);
+      border: 1px solid rgba(141, 107, 255, .28);
+    }
+    .demo-switcher-title { display: block; font-size: 10px; font-weight: 800; color: #cdbcff; letter-spacing: .04em; margin-bottom: 7px; }
+    .demo-switch-row { display: flex; gap: 5px; }
+    .demo-switch-btn {
+      flex: 1 1 0; min-width: 0;
+      padding: 6px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(8, 16, 28, .6);
+      color: var(--soft);
+      font-size: 11px; font-weight: 800;
+      cursor: pointer;
+    }
+    .demo-switch-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--violet), var(--blue));
+      border-color: transparent;
+    }
+    .demo-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 0 0 14px; padding: 10px 14px;
+      border-radius: 12px;
+      color: #e7e0ff;
+      background: rgba(141, 107, 255, .12);
+      border: 1px solid rgba(141, 107, 255, .32);
+      font-size: 13px;
+    }
+    .demo-banner strong { display: block; color: #f1ecff; }
+    .demo-banner span { color: #c8bcec; font-size: 12px; }
+    .demo-banner .small-btn { flex: 0 0 auto; }
     .diag-result { display: grid; gap: 14px; }
     .diag-head { display: grid; gap: 8px; }
     .diag-score { display: flex; align-items: baseline; gap: 10px; }
@@ -1457,7 +1493,20 @@
       };
     }
 
+    // The real signed-in identity, independent of the demo (buyer) view.
+    function isRealAdmin() {
+      return state.realAdmin === true || state.role === "admin" || state.plan === "admin_full";
+    }
+
+    // Admin-only "buyer view": render the app exactly as a Lite/Pro purchaser
+    // sees it, while the real session stays admin so generation still uses the
+    // admin's own API key. This is a frontend display simulation only.
+    function isDemoView() {
+      return isRealAdmin() && (state.demoView === "lite" || state.demoView === "pro");
+    }
+
     function isAdmin() {
+      if (isDemoView()) return false;
       return state.role === "admin" || state.plan === "admin_full";
     }
 
@@ -1470,6 +1519,7 @@
     }
 
     function canUsePro() {
+      if (isDemoView()) return state.demoView === "pro";
       return isAdmin() || state.plan === "pro";
     }
 
@@ -1530,8 +1580,18 @@
       }[char]));
     }
 
+    function demoSwitcherHtml() {
+      if (!isRealAdmin()) return "";
+      const current = state.demoView || "admin";
+      const button = (value, label) => `<button type="button" class="demo-switch-btn${current === value ? " active" : ""}" data-demo-view="${value}">${label}</button>`;
+      return `<div class="demo-switcher">
+        <span class="demo-switcher-title">表示ビュー（テスト用）</span>
+        <div class="demo-switch-row">${button("admin", "管理者")}${button("lite", "購入者Lite")}${button("pro", "購入者Pro")}</div>
+      </div>`;
+    }
+
     function buildNav(target) {
-      target.innerHTML = navGroups.map(([title, pages]) => `
+      target.innerHTML = demoSwitcherHtml() + navGroups.map(([title, pages]) => `
         <div class="${target === desktopNav ? "nav-section" : "menu-group"}">
           <span class="${target === desktopNav ? "nav-title" : "menu-group-title"}">${title}</span>
           ${pages.map((page) => {
@@ -1547,11 +1607,14 @@
     }
 
     function trialContent(feature) {
+      if (isDemoView()) {
+        return `<div><strong>購入者${state.demoView === "pro" ? "Pro" : "Lite"}ビュー（テスト）</strong><span>購入者と同じ表示です。生成はあなたのAPIキーで動きます。</span></div>`;
+      }
       if (isAdmin()) {
         return `<div><strong>管理者フルアクセス</strong><span>すべてのプラン機能を利用できます。無料トライアル制限は適用されません。</span></div>`;
       }
       if (!isTrialPlan()) {
-        return `<div><strong>${esc(state.planLabel)}</strong><span>プラン権限で利用できます。</span></div>`;
+        return `<div><strong>${esc(state.demoView ? "購入者ビュー" : state.planLabel)}</strong><span>プラン権限で利用できます。</span></div>`;
       }
       if (isTrialExpired()) {
         return `<div><strong>無料トライアル期間が終了しました</strong><span>継続利用するにはプランを選択してください。</span></div>
@@ -1579,11 +1642,17 @@
         bar.innerHTML = trialContent(bar.dataset.trial);
       });
       document.querySelectorAll(".role-label").forEach((item) => {
-        item.textContent = isPreviewMode() ? "UIプレビュー / Liteプラン" : (isAdmin() ? "管理者フルアクセス" : (state.planLabel || "無料トライアル"));
+        item.textContent = isPreviewMode() ? "UIプレビュー / Liteプラン"
+          : isDemoView() ? `購入者ビュー: ${state.demoView === "pro" ? "Pro" : "Lite"}`
+          : (isAdmin() ? "管理者フルアクセス" : (state.planLabel || "無料トライアル"));
       });
       const topActions = document.querySelector("#topActions");
-      if (topActions && isAdmin() && !topActions.querySelector("[data-admin-link]")) {
+      const existingAdminLink = topActions ? topActions.querySelector("[data-admin-link]") : null;
+      if (topActions && isAdmin() && !existingAdminLink) {
         topActions.insertAdjacentHTML("afterbegin", `<a class="ghost-btn" data-admin-link href="/admin">管理画面を開く</a>`);
+      } else if (existingAdminLink && !isAdmin()) {
+        // In buyer view, hide the admin-only link so it matches the purchaser UI.
+        existingAdminLink.remove();
       }
     }
 
@@ -3142,6 +3211,25 @@
       return new URLSearchParams(location.search).get("page") || "dashboard";
     }
 
+    function setDemoView(value) {
+      if (!isRealAdmin()) return;
+      state.demoView = (value === "lite" || value === "pro") ? value : null;
+      closeMobileMenu();
+      renderPage(currentPage());
+      showToast(state.demoView
+        ? `購入者${state.demoView === "pro" ? "Pro" : "Lite"}ビューに切り替えました`
+        : "管理者ビューに戻しました");
+    }
+
+    function demoBanner() {
+      if (!isDemoView()) return "";
+      const label = state.demoView === "pro" ? "購入者Proビュー" : "購入者Liteビュー";
+      return `<div class="demo-banner" role="status">
+        <div><strong>${label}（テスト表示）</strong><span>購入者と同じ画面です。生成はあなたのAPIキーで実行されます。</span></div>
+        <button type="button" class="small-btn" data-demo-view="admin">管理者ビューに戻る</button>
+      </div>`;
+    }
+
     function navigate(page, replace = false) {
       const next = new URL(location.href);
       if (page === "dashboard") next.searchParams.delete("page");
@@ -3157,7 +3245,7 @@
       pageLead.textContent = meta[1];
       const rawHtml = isProPage(page) && !canUsePro() ? proGatePage(page) : (pageTemplates[page] ? pageTemplates[page]() : genericPage(page));
       const pageHtml = isProPage(page) && !canUsePro() ? rawHtml : injectFeatureIntro(page, rawHtml);
-      pageHost.innerHTML = `${previewBanner()}${pageHtml}`;
+      pageHost.innerHTML = `${previewBanner()}${demoBanner()}${pageHtml}`;
       refreshChrome(page);
       bindDynamicEvents();
       if (!options.keepScroll) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -4967,6 +5055,11 @@
     }
 
     document.addEventListener("click", (event) => {
+      const demoButton = event.target.closest("[data-demo-view]");
+      if (demoButton) {
+        setDemoView(demoButton.dataset.demoView);
+        return;
+      }
       const pageButton = event.target.closest("[data-page]");
       if (pageButton) {
         navigate(pageButton.dataset.page);
@@ -5129,8 +5222,11 @@
           state.allFeatures = true;
           state.trialLimited = false;
           state.canAccessAdmin = true;
+          state.realAdmin = true;
           localStorage.removeItem("sns-mnm-pro-role");
         } else {
+          state.realAdmin = false;
+          state.demoView = null;
           state.planLabel = data.user.plan === "pro" ? "Proプラン" : data.user.plan === "lite" ? "Liteプラン" : "無料トライアル";
           state.trialLimited = data.user.plan === "trial";
           if (data.user.trialStartedAt) state.trialStartedAt = data.user.trialStartedAt;
@@ -5155,6 +5251,7 @@
         state.role = "admin";
         state.plan = "admin_full";
         state.planLabel = data.admin.planLabel || "管理者フルアクセス";
+        state.realAdmin = true;
         state.allFeatures = true;
         state.trialLimited = false;
         state.canUseAllPlans = true;
