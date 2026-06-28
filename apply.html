@@ -337,6 +337,45 @@
       font-size: 12px;
       line-height: 1.6;
     }
+    .test-sale-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 14px auto 0;
+      max-width: 1120px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124, 160, 255, .18), rgba(141, 107, 255, .18));
+      border: 1px solid rgba(124, 160, 255, .34);
+      font-size: 13px;
+    }
+    .test-sale-banner strong {
+      flex: 0 0 auto;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: var(--violet, #8d6bff);
+      color: #fff;
+      font-size: 12px;
+    }
+    .stat .strike {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      text-decoration: line-through;
+      font-weight: 600;
+    }
+    .release-tag {
+      margin-left: 8px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: rgba(255, 191, 71, .14);
+      border: 1px solid rgba(255, 191, 71, .3);
+      color: #ffe6a8;
+      font-size: 11px;
+      font-weight: 800;
+      vertical-align: middle;
+    }
     .flow {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -551,9 +590,14 @@
       <div class="top-actions">
         <a class="ghost" href="/login">ログイン</a>
         <a class="ghost" href="/?page=billing">プランを見る</a>
-        <a class="primary violet" href="#apply-form">今すぐ申し込む</a>
+        <a class="primary violet" href="#apply-form">30日無料で試す</a>
       </div>
     </header>
+
+    <div class="test-sale-banner" role="status">
+      <strong>テスト販売中</strong>
+      <span>今だけ Lite ¥1,980（通常 ¥3,980）／30日間無料でお試しいただけます。</span>
+    </div>
 
     <section class="hero">
       <section class="hero-copy panel">
@@ -572,23 +616,23 @@
             <small>AI投稿文生成、1日分生成、リライト、投稿管理</small>
           </div>
           <div class="stat">
-            <span>Liteプラン</span>
-            <strong>3,980円</strong>
+            <span>Liteプラン（テスト販売価格）</span>
+            <strong>1,980円<small class="strike">3,980円</small></strong>
             <small>Threads API連携とフォロワー数管理を利用可能</small>
           </div>
           <div class="stat">
             <span>Proプラン</span>
-            <strong>5,200円</strong>
-            <small>保存・返信・勝ちパターン辞書などの高度分析に対応</small>
+            <strong>9月下旬予定</strong>
+            <small>保存・返信・勝ちパターン辞書などの高度分析（9月下旬リリース予定）</small>
           </div>
           <div class="stat">
             <span>無料トライアル</span>
-            <strong>3日間</strong>
-            <small>まずは購入前に画面と導線を試せます</small>
+            <strong>30日間</strong>
+            <small>まずは購入前に画面と導線をじっくり試せます</small>
           </div>
         </div>
         <div class="cta-row">
-          <a class="primary violet" href="#apply-form">無料トライアルに申し込む</a>
+          <a class="primary violet" href="#apply-form">30日無料で試す</a>
         </div>
       </section>
 
@@ -653,8 +697,8 @@
       </div>
       <p class="feature-note">※画面内の数値・グラフは表示イメージです。実際のフォロワー数や増減は、Threads API連携後に取得した値を表示します。</p>
       <div class="pro-menu-block">
-        <h3>Pro限定メニュー</h3>
-        <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。</p>
+        <h3>Pro限定メニュー <span class="release-tag">9月下旬リリース予定</span></h3>
+        <p>Proプランでは、投稿生成だけでなく、保存・返信・比較・分析まで見ながら改善できる上位機能を利用できます。<strong>Proプランは9月下旬リリース予定です。</strong>テスト販売中はLiteプランをご利用いただけます。</p>
         <div class="pro-chip-grid">
           <div class="pro-chip">投稿シリーズ生成</div>
           <div class="pro-chip">スレッド生成</div>
@@ -714,9 +758,9 @@
           <label>メールアドレス<input name="email" type="email" required placeholder="you@example.com"></label>
           <label>メールアドレス確認<input name="emailConfirm" type="email" required placeholder="you@example.com"></label>
           <label>希望プラン<select name="plan" required>
-            <option value="無料トライアル">無料トライアル</option>
-            <option value="Liteプラン">Liteプラン 3,980円/月</option>
-            <option value="Proプラン">Proプラン 5,200円/月</option>
+            <option value="無料トライアル">30日間無料トライアル</option>
+            <option value="Liteプラン">Liteプラン 1,980円/月（テスト販売価格）</option>
+            <option value="Proプラン" disabled>Proプラン（9月下旬リリース予定）</option>
           </select></label>
           <label>利用目的<select name="purpose" id="purpose" required>
             <option value="Threads投稿を効率化したい">Threads投稿を効率化したい</option>
@@ -741,10 +785,10 @@
           <label class="check"><input type="checkbox" required>決済確認後、管理者がライセンスキーを手動発行することを理解しました</label>
         </div>
 
-        <div class="notice">Stripe Payment Links は後から設定できます。今は公開導線と申し込み取得の形を先に固めています。実運用ではここから決済ページへ案内します。</div>
+        <div class="notice"><strong>30日間無料</strong>：お申し込み後すぐにご利用開始いただけます。無料期間内（30日以内）に解約された場合、料金は一切発生しません。解約は support@koucha-lab.com へのご連絡で承ります。決済はPayPalを予定しています（準備中）。</div>
         <div class="error" id="error"></div>
         <div class="cta-row">
-          <button class="primary violet" id="submitBtn" type="button">お申し込み内容を送信</button>
+          <button class="primary violet" id="submitBtn" type="button">30日無料で試す</button>
           <a class="ghost" href="/login">すでに購入済みの方はこちら</a>
         </div>
       </section>
