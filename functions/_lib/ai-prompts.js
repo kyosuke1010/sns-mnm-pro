@@ -1,6 +1,7 @@
 import { resolvePostTypeProfile } from "./ai-post-types.js";
 import { resolveToneProfile } from "./ai-tone-profiles.js";
 import { analyzeUserInput } from "./ai-input-understanding.js";
+import { renderVoiceReferences } from "./voice-references.js";
 
 export const PHASE1_FEATURE_LABELS = {
   "ai-post": "AI投稿文生成",
@@ -510,49 +511,7 @@ function fewShotPrompt(feature, platform) {
     "Why this is bad: an invented clock-time + ながらスマホ scene, a forced 👇 numbered list, the vague word 'AI' with no real product name, heavy 体言止め, and a templated shape that repeats across every candidate.",
     "If the topic is about AI, name the actual tools (ChatGPT, Claude, Gemini …) and what each is good for, in a real human voice, with mostly verb-ending sentences and no forced list.",
     "",
-    "VOICE REFERENCE — this is the human register to aim for on Threads.",
-    "Copy the VOICE (frankness, raw emotion, slang, humor, real numbers, spoken endings, light emoji) — do NOT copy these exact facts, numbers, or topics.",
-    "",
-    "Ref A (emotional milestone, plain spoken + emoji):",
-    "スレッズ始めて80日。50代でも毎日続けてたら、あと少しで400人いきそう。正直、うれしい☺️ みんなさいこ〜🫶",
-    "",
-    "Ref B (casual realization, slang + 笑):",
-    "毎日30コメントしてみたら、想像と違ったんだよねwww 施策の一つだと思ってたのに、ガチで交流の入口やった🥹 受け身からこっちに変えただけで一気に伸びた。",
-    "",
-    "Ref C (opinionated, repetition + plain form):",
-    "目立ちたいわけじゃないのよ。すごく稼ぎたいわけでもないの。ただ、自分が機嫌よくいられる毎日がほしいだけなんだよね。",
-    "",
-    "Ref D (frank tips, dialect + warning, light emoji):",
-    "伸ばしたいよね。でも真面目な人ほど、頑張り方を間違えがち。投稿数を増やす、いいね周りを頑張る…行動量が増えると、確実に消耗しちゃう。頑張る方向、間違えないでね😎",
-    "",
-    "Ref E (real product name, hype):",
-    "ChatGPTの新しいやつ、これマジでやばい⁉️ ベンチだけ見たら一個上のモデル超えてる説ある。使ってる人、感想ちょうだい！",
-    "",
-    "Ref F (thoughtful-but-frank, a sharp metaphor — no emoji needed):",
-    "悪口を気にするかどうかの前に、そもそも誰の意見を聞くかを先に決めておく。信頼できる人の言葉だけ受け取る枠を最初に作る。それ以外は受け取り拒否じゃなくて、そもそも自分宛てじゃない郵便物。開封する理由がない。気にした瞬間、相手と同じステージに降りてる。",
-    "",
-    "Ref G (big-brother coaching, rhetorical question + purposeful 体言止め + plain 俺/キミ):",
-    "運用始めたばかりの人へ。「毎日投稿する」って決意、3日くらいで薄れてきてないか？俺もそうだった。理由はシンプルで、決意があいまいだったから。何を・いつ・誰に・どのくらいの長さで書くか、そこまで決めて、やっと習慣になる。最初の一歩は小さく。キミの「毎日投稿」、もう少し細かく決めてみ？",
-    "",
-    "Ref H (warm milestone + community invite, emoji-rich):",
-    "みなさん、絡むなら今ですよ！始めて1ヶ月で80万インプ、880人にフォローしてもらえました♥️ アクティブ層に絡むと『動いてる垢』って認識されて、いろんな人の目につきやすくなるみたい✨ 私を踏み台に、みんな伸びちゃってください😊",
-    "",
-    "Ref I (casual question straight to followers):",
-    "26歳、あと5日くらいで終わるんだけど…26のうちにやっといた方がいいこと教えて！すぐできそうなやつでお願いします🙏",
-    "",
-    "Ref J (young male, 僕/タメ口, self-disclosure + 笑/emoji):",
-    "正直さ、最初の3ヶ月はまじで誰にも読まれてなくて、スマホ伏せて寝るのが日課やったわ😂 でも毎晩ちょっとずつ投稿いじってたら、ある日いきなり伸びた。才能ちゃうねん、ただ「続けた回数」やった。",
-    "",
-    "Ref K (young male, 甘め, talking to ONE person):",
-    "きみのその投稿、ぜんぜん悪くないよ。むしろ良い。ただ最初の1行が「説明」になってるだけ。そこを「きみが心の中でつぶやいた一言」に変えると、急に止まるようになる。だまされたと思って明日やってみ？",
-    "",
-    "Ref L (young male, hype + real product names + emoji):",
-    "ChatGPTとClaude両方ガッツリ触ってる僕の結論：ネタ出しはChatGPT、文章の温度感はClaudeが強い🥹 1個に絞らんでよくて、作業ごとに使い分けるだけで投稿づくりまじで楽になるで。",
-    "",
-    "Ref M (young male, low→warm emotional arc, one-person):",
-    "伸びない日が続くと、自分のセンスを疑うよな。わかる、僕も毎回そう思う。でもな、数字が動かん時はだいたい「誰に向けてるか」がぼやけてるだけ。一人だけ思い浮かべて書いた投稿は、ちゃんと誰かに刺さる。大丈夫、まだ全然いける。",
-    "",
-    "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits, and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. big-brother vs. young-male 僕-voice) that fits the topic and tone."
+    renderVoiceReferences()
   ].join("\n");
   const x = [
     "GOOD X example pattern:",
