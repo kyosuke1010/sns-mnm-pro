@@ -3427,6 +3427,8 @@
             <div class="notice">先に Cloudflare の環境変数 <strong>EMAIL_API_KEY / EMAIL_FROM</strong> を登録して再デプロイしてください。</div>
             <div class="form-grid"><label>送信先メールアドレス<input id="testEmailTo" placeholder="自分のメールアドレス"><button class="small-btn" type="button" id="testEmailBtn" style="margin-top:8px">テストメールを送信</button></label></div>
             <div class="result-box" id="testEmailResult" style="display:none"></div>
+            <div class="actions" style="margin-top:6px"><button class="ghost-btn" type="button" id="emailDomainsBtn">🔍 このキーが見えるドメインを確認</button><span class="muted" id="emailDomainsStatus"></span></div>
+            <div class="result-box" id="emailDomainsResult" style="display:none"></div>
           </section>` : ""}
           <section class="panel">
             <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
@@ -5161,6 +5163,26 @@
           box.textContent = safeApiMessage(error, "テスト送信に失敗しました");
         } finally {
           testEmailBtn.disabled = false;
+        }
+      });
+      const emailDomainsBtn = document.querySelector("#emailDomainsBtn");
+      if (emailDomainsBtn) emailDomainsBtn.addEventListener("click", async () => {
+        const statusEl = document.querySelector("#emailDomainsStatus");
+        const box = document.querySelector("#emailDomainsResult");
+        emailDomainsBtn.disabled = true;
+        if (statusEl) statusEl.textContent = "確認中…";
+        try {
+          const result = await apiFetchJson("/api/admin/email-domains", { method: "GET" });
+          if (statusEl) statusEl.textContent = "";
+          const domains = (result.domains || []).map((d) => `・${esc(d.name)}｜${esc(d.status || "")}｜${esc(d.region || "")}`).join("<br>") || "（このキーのアカウントにドメインが1つもありません）";
+          box.style.display = "block";
+          box.innerHTML = `<div class="muted">EMAIL_FROM: ${esc(result.email_from || "(未設定)")}</div><div style="margin-top:8px"><strong>このキーが見えるドメイン（${result.domain_count}）</strong></div><div class="muted" style="margin-top:6px">${domains}</div>`;
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "失敗";
+          box.style.display = "block";
+          box.textContent = safeApiMessage(error, "確認に失敗しました");
+        } finally {
+          emailDomainsBtn.disabled = false;
         }
       });
       const apiTest = document.querySelector("#testApiBtn");
