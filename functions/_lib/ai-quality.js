@@ -64,6 +64,9 @@ export function retryInstruction(quality) {
   if (objective.includes("flat_rhythm")) {
     objectiveLines.push("- The sentence rhythm was flat. Mix short punchy lines with longer ones.");
   }
+  if (objective.includes("taigen_overuse")) {
+    objectiveLines.push("- Too many sentences ended on a noun (体言止め), which reads as AI-written. Rewrite so almost every sentence ends with a verb, adjective, or feeling in natural spoken Japanese; keep 体言止め to at most one per post.");
+  }
   if (objective.includes("meta_explanation")) {
     objectiveLines.push("- The body described what the tool does (e.g. 「〜余白を作ります」「会話導線を設計します」). The body must BE the post itself. Remove every process/meta sentence and write only what the reader would see.");
   }
@@ -103,10 +106,11 @@ export function inspectGeneratedText(text = "") {
   const metaExplanation = /(余白を作りま|余白を残しま|流れを作りま|流れに整え|導線を(設計|作り|整え)|会話導線を|自然に話せるように(しま|整え)|話せる(余白|流れ)を|案内の前に[、,])/;
   if (metaExplanation.test(body)) flags.push("meta_explanation");
 
-  // 3. 具体アンカー: at least one concrete element (number, quote, real scene, specific moment).
+  // 3. 具体アンカー: a number, a quote, a real scene, a specific moment, or a real product name.
   const concreteAnchor = /[0-9０-９]/.test(body)
     || /[「『][^」』]{2,}[」』]/.test(body)
-    || /(とき|場面|あの日|去年|先日|昨日|今朝|朝|昼|夜|電車|スマホ|画面|手が止ま|スプレッドシート|メモ帳|ノート|例えば|たとえば|具体的に)/.test(body);
+    || /(ChatGPT|チャッピー|Claude|クロード|Gemini|ジェミニ|Perplexity|NotebookLM|Copilot|Midjourney|Canva|Notion|Excel|スプレッドシート|note)/i.test(body)
+    || /(とき|場面|あの日|去年|先日|昨日|今朝|朝|昼|夜|電車|スマホ|画面|手が止ま|メモ帳|ノート|例えば|たとえば|具体的に)/.test(body);
   if (!concreteAnchor) flags.push("no_concrete_anchor");
 
   // 4. 文長リズム: sentence length variation. Flat = many similar-length sentences.
@@ -119,9 +123,22 @@ export function inspectGeneratedText(text = "") {
     if (!rhythmVaried) flags.push("flat_rhythm");
   }
 
+  // 5. 体言止め overuse: too many PROSE sentences ending on a noun (a strong AI-smell tell).
+  // Japanese predicates end in hiragana (る/た/い/です/ます/だ…); a prose sentence ending
+  // in a kanji or katakana is almost always 体言止め. List items are excluded.
+  const proseSentences = sentences.filter((item) => !/^[\s　]*(?:[①-⑳]|[0-9０-９]+[.)、．]|[-・*→▶◆●])/u.test(item));
+  const taigenEndings = proseSentences.filter((item) => {
+    const trimmed = item.replace(/[」』）)\]】、,…・\s　]+$/u, "");
+    return /[一-龯ァ-ヶー]$/u.test(trimmed);
+  });
+  if (proseSentences.length >= 4 && taigenEndings.length >= 3 && (taigenEndings.length / proseSentences.length) >= 0.5) {
+    flags.push("taigen_overuse");
+  }
+
   const hardFail = flags.includes("bait")
     || flags.includes("generic_ending")
     || flags.includes("meta_explanation")
+    || flags.includes("taigen_overuse")
     || (flags.includes("no_concrete_anchor") && flags.includes("flat_rhythm"));
   return { flags, hardFail, concreteAnchor, rhythmVaried };
 }
