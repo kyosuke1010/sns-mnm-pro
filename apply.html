@@ -48,7 +48,7 @@
       overflow: hidden;
       line-height: 0;
       background: #04101c;
-      animation: banner-rise 1.6s ease-out both;
+      animation: banner-fade-in 2s ease both;
     }
     .top-banner img {
       width: 100%;
@@ -57,9 +57,9 @@
       object-position: center;
       display: block;
     }
-    @keyframes banner-rise {
-      from { opacity: 0; transform: translateY(24px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes banner-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
       .top-banner { animation: none; }
