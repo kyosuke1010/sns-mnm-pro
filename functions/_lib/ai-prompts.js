@@ -338,6 +338,9 @@ function commonSystemPrompt() {
     "- Kill ふんわりした抽象表現 (vague, safe, generic phrasing). Say the specific, slightly opinionated thing a real human would actually say. A concrete experience with a real number beats a polished generality.",
     "- Use emoji only when the tone is casual AND the profile does not say 使わない; then use them sparingly and naturally (☺️ 🥹 😎 ✨ 🫶), never one on every line.",
     "- For logical / professional / concise tones, stay measured — but still sound like a real human with a viewpoint, never like corporate copy.",
+    "- Deliberately vary sentence length: mix very short lines (一言だけの行) with longer flowing ones. Several similar-length sentences in a row reads mechanical.",
+    "- Move the emotional temperature across the post: start a little cooler, uncertain, or low, then grow warmer / more encouraging toward the end. A flat, constant tone is a strong AI tell.",
+    "- Write as if talking to ONE specific person, not broadcasting to a crowd. 「きみ/あなた」一人に向けて話す感覚で。「みなさん、〜しましょう」的な号令調は、トーンが本当に求める時以外は避ける。",
     "- Respect the user's chosen tone and profile above all; this register guidance sets the DEFAULT human-ness, it is not a fixed dialect to force everywhere.",
     "",
     "REACH THROUGH HUMAN FEELING (not mechanical optimization):",
@@ -537,7 +540,19 @@ function fewShotPrompt(feature, platform) {
     "Ref I (casual question straight to followers):",
     "26歳、あと5日くらいで終わるんだけど…26のうちにやっといた方がいいこと教えて！すぐできそうなやつでお願いします🙏",
     "",
-    "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits, and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. big-brother) that fits the topic and tone."
+    "Ref J (young male, 僕/タメ口, self-disclosure + 笑/emoji):",
+    "正直さ、最初の3ヶ月はまじで誰にも読まれてなくて、スマホ伏せて寝るのが日課やったわ😂 でも毎晩ちょっとずつ投稿いじってたら、ある日いきなり伸びた。才能ちゃうねん、ただ「続けた回数」やった。",
+    "",
+    "Ref K (young male, 甘め, talking to ONE person):",
+    "きみのその投稿、ぜんぜん悪くないよ。むしろ良い。ただ最初の1行が「説明」になってるだけ。そこを「きみが心の中でつぶやいた一言」に変えると、急に止まるようになる。だまされたと思って明日やってみ？",
+    "",
+    "Ref L (young male, hype + real product names + emoji):",
+    "ChatGPTとClaude両方ガッツリ触ってる僕の結論：ネタ出しはChatGPT、文章の温度感はClaudeが強い🥹 1個に絞らんでよくて、作業ごとに使い分けるだけで投稿づくりまじで楽になるで。",
+    "",
+    "Ref M (young male, low→warm emotional arc, one-person):",
+    "伸びない日が続くと、自分のセンスを疑うよな。わかる、僕も毎回そう思う。でもな、数字が動かん時はだいたい「誰に向けてるか」がぼやけてるだけ。一人だけ思い浮かべて書いた投稿は、ちゃんと誰かに刺さる。大丈夫、まだ全然いける。",
+    "",
+    "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits, and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. big-brother vs. young-male 僕-voice) that fits the topic and tone."
   ].join("\n");
   const x = [
     "GOOD X example pattern:",
