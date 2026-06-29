@@ -302,19 +302,28 @@
       border: 1px solid rgba(78, 121, 153, 0.24);
       border-radius: 14px;
       padding: 16px;
-      background: rgba(9, 24, 40, 0.82);
+      background: linear-gradient(180deg, rgba(13, 30, 50, 0.9), rgba(9, 24, 40, 0.84));
       display: grid;
       gap: 10px;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .feature:hover {
+      transform: translateY(-3px);
+      border-color: rgba(212, 175, 55, 0.5);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
     }
     .feature-icon {
-      width: 42px;
-      height: 42px;
+      width: 46px;
+      height: 46px;
       border-radius: 12px;
       display: grid;
       place-items: center;
       font-size: 20px;
-      background: linear-gradient(135deg, rgba(141, 107, 255, 0.24), rgba(46, 137, 232, 0.24));
-      border: 1px solid rgba(141, 107, 255, 0.28);
+      font-weight: 900;
+      color: #2a1d05;
+      background: linear-gradient(135deg, #f6dc8a 0%, #d9b441 46%, #b8860b 100%);
+      border: 1px solid rgba(255, 228, 158, 0.75);
+      box-shadow: 0 6px 16px rgba(184, 134, 11, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.55);
     }
     .feature h3 {
       margin: 0;
@@ -586,7 +595,7 @@
     <header class="topbar">
       <div class="top-actions">
         <a class="ghost" href="/login">ログイン</a>
-        <a class="ghost" href="/?page=billing">プランを見る</a>
+        <a class="ghost" href="#plans">プランを見る</a>
         <a class="primary violet" href="#apply-form">7日間無料で試す</a>
       </div>
     </header>
@@ -638,7 +647,7 @@
       </aside>
     </section>
 
-    <section class="section panel">
+    <section class="section panel" id="plans">
       <div class="section-head">
         <h2>このツールでできること</h2>
         <p>投稿を作るだけでなく、運用の型を貯めて、次の投稿や次の案内につなげるところまでをまとめています。</p>
@@ -818,7 +827,7 @@
       </div>
       <div class="cta-row">
         <a class="primary violet" id="paymentLink" href="#">決済ページへ進む</a>
-        <a class="ghost" href="/?page=billing">プラン一覧へ戻る</a>
+        <a class="ghost" href="#plans">プラン一覧へ戻る</a>
       </div>
     </section>
 
