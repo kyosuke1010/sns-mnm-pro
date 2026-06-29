@@ -43,28 +43,33 @@
       margin: 0 auto;
       padding: 20px 0 28px;
     }
+    .top-banner {
+      width: 100%;
+      overflow: hidden;
+      line-height: 0;
+      background: #04101c;
+      animation: banner-rise 1.6s ease-out both;
+    }
+    .top-banner img {
+      width: 100%;
+      height: clamp(104px, 17vw, 200px);
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+    @keyframes banner-rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .top-banner { animation: none; }
+    }
     .topbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 14px;
-      padding: 8px 0 18px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-    .brand img {
-      height: 64px;
-      width: auto;
-      max-width: 60vw;
-      object-fit: contain;
-      border-radius: 12px;
-      border: 1px solid rgba(32, 212, 199, 0.25);
-      background: rgba(9, 24, 40, 0.95);
-      flex: 0 0 auto;
+      padding: 14px 0 18px;
     }
     .top-actions {
       display: flex;
@@ -545,9 +550,6 @@
         font-size: 12px;
         white-space: nowrap;
       }
-      .brand img {
-        height: 52px;
-      }
       .hero-copy {
         min-height: 480px;
         padding: 22px;
@@ -577,11 +579,11 @@
   </style>
 </head>
 <body>
+  <div class="top-banner">
+    <img src="./assets/sns-mnm-pro-top-banner-20260629.jpg" alt="SNS MNM-PRO｜KOUCHA-LAB.COM">
+  </div>
   <main class="page">
     <header class="topbar">
-      <div class="brand">
-        <img src="./assets/sns-mnm-pro-banner-20260629.jpg" alt="SNS MNM-PRO｜KOUCHA-LAB.COM">
-      </div>
       <div class="top-actions">
         <a class="ghost" href="/login">ログイン</a>
         <a class="ghost" href="/?page=billing">プランを見る</a>
