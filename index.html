@@ -3421,6 +3421,12 @@
             <div class="result-box" id="billingStatusResult" style="display:none"></div>
             <div class="form-grid" style="margin-top:6px"><label>パスワード設定リンクを発行（メール未設定時の確認用）<span class="field-help">購入者のメールを入れて発行 → 出たURLを開けばパスワード設定できます。</span><input id="issueLinkEmail" placeholder="購入者のメールアドレス"><button class="small-btn" type="button" id="issueLinkBtn" style="margin-top:8px">パスワード設定リンクを発行</button></label></div>
             <div class="result-box" id="issueLinkResult" style="display:none"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>メール送信テスト（管理者専用）</h2><p>Resend（自動メール）の設定確認用。自分のメール宛にテスト送信して、届くか確認します。</p></div><span class="pill">管理者</span></div>
+            <div class="notice">先に Cloudflare の環境変数 <strong>EMAIL_API_KEY / EMAIL_FROM</strong> を登録して再デプロイしてください。</div>
+            <div class="form-grid"><label>送信先メールアドレス<input id="testEmailTo" placeholder="自分のメールアドレス"><button class="small-btn" type="button" id="testEmailBtn" style="margin-top:8px">テストメールを送信</button></label></div>
+            <div class="result-box" id="testEmailResult" style="display:none"></div>
           </section>` : ""}
           <section class="panel">
             <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
@@ -5138,6 +5144,23 @@
           box.textContent = safeApiMessage(error, "発行に失敗しました");
         } finally {
           issueLinkBtn.disabled = false;
+        }
+      });
+      const testEmailBtn = document.querySelector("#testEmailBtn");
+      if (testEmailBtn) testEmailBtn.addEventListener("click", async () => {
+        const to = (document.querySelector("#testEmailTo")?.value || "").trim();
+        const box = document.querySelector("#testEmailResult");
+        if (!to) { showToast("送信先メールを入力してください"); return; }
+        testEmailBtn.disabled = true;
+        try {
+          const result = await apiFetchJson("/api/admin/test-email", { method: "POST", body: JSON.stringify({ to }) });
+          box.style.display = "block";
+          box.innerHTML = `<div><strong>✅ ${esc(result.message || "送信しました")}</strong></div>`;
+        } catch (error) {
+          box.style.display = "block";
+          box.textContent = safeApiMessage(error, "テスト送信に失敗しました");
+        } finally {
+          testEmailBtn.disabled = false;
         }
       });
       const apiTest = document.querySelector("#testApiBtn");
