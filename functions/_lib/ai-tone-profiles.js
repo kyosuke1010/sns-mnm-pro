@@ -14,14 +14,14 @@ export const TONE_PROFILES = {
   friendly: {
     label: "親しみやすい",
     match: ["親しみ", "フランク", "会話"],
-    opening: "日常のあるあるから入る",
+    opening: "日常のあるあるから、タメ口寄りで入る",
     denial: "軽く言い切ってテンポを作る",
     empathy: "中から多め",
     assertion: "中",
-    rhythm: "会話感と読みやすい改行",
+    rhythm: "会話感・口語のタメ口中心（です/ます多用しない）・読みやすい改行",
     cta: "返信や保存を自然に促す",
     sales: "弱めから中",
-    vocabulary: ["これ", "じつは", "ありがち", "ここだけ"]
+    vocabulary: ["これ", "じつは", "ありがち", "〜なんだよね", "正直", "ガチで", "〜しちゃう", "笑"]
   },
   logical: {
     label: "論理的",
@@ -42,10 +42,10 @@ export const TONE_PROFILES = {
     denial: "はっきり否定して視点転換する",
     empathy: "中",
     assertion: "強め",
-    rhythm: "短く勢いのある文を混ぜる",
+    rhythm: "短く勢いのある口語を混ぜる（タメ口OK、です/ますで固めない）",
     cta: "今すぐできる一歩を置く",
     sales: "中から強め",
-    vocabulary: ["そこじゃない", "変えられます", "今日から", "まず一つ"]
+    vocabulary: ["そこじゃない", "変えられる", "今日から", "マジで", "〜やん", "ガチで"]
   },
   concise: {
     label: "短文",
