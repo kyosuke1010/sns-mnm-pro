@@ -57,29 +57,18 @@
       min-width: 0;
     }
     .brand img {
-      width: 176px;
-      max-width: 46vw;
       height: 64px;
-      object-fit: cover;
+      width: auto;
+      max-width: 60vw;
+      object-fit: contain;
       border-radius: 12px;
       border: 1px solid rgba(32, 212, 199, 0.25);
       background: rgba(9, 24, 40, 0.95);
       flex: 0 0 auto;
     }
-    .brand-copy strong {
-      display: block;
-      letter-spacing: 0.08em;
-      font-size: 15px;
-    }
-    .brand-copy span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 3px;
-    }
     .top-actions {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       justify-content: flex-end;
       gap: 10px;
     }
@@ -216,42 +205,14 @@
         radial-gradient(circle at 50% 38%, rgba(46, 137, 232, 0.22), transparent 62%),
         rgba(6, 16, 28, 0.5);
     }
-    .hero-character {
-      display: grid;
-      justify-items: center;
-      gap: 14px;
-      text-align: center;
-    }
-    .character-badge {
-      padding: 6px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(141, 107, 255, 0.4);
-      background: rgba(141, 107, 255, 0.16);
-      color: #e7e0ff;
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .character-img {
-      width: min(320px, 78%);
+    .hero-keyvisual {
+      width: 100%;
       height: auto;
       display: block;
-      filter: drop-shadow(0 22px 36px rgba(0, 0, 0, 0.5));
-      animation: character-float 5.5s ease-in-out infinite;
+      border-radius: 16px;
+      border: 1px solid rgba(120, 170, 255, 0.22);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
     }
-    @keyframes character-float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .character-img { animation: none; }
-    }
-    .character-caption {
-      color: var(--soft);
-      font-size: 14px;
-      line-height: 1.6;
-      max-width: 18em;
-    }
-    .character-caption strong { color: #fff; }
     .stat {
       border: 1px solid rgba(78, 121, 153, 0.26);
       border-radius: 14px;
@@ -566,16 +527,26 @@
     @media (max-width: 780px) {
       .page { width: min(100%, calc(100% - 24px)); }
       .topbar {
-        grid-template-columns: 1fr;
-        align-items: start;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
       }
       .top-actions {
-        justify-content: stretch;
-        display: grid;
+        justify-content: center;
+        flex-wrap: nowrap;
+        width: 100%;
+        gap: 8px;
+      }
+      .top-actions .primary,
+      .top-actions .ghost {
+        flex: 0 1 auto;
+        min-height: 44px;
+        padding: 0 12px;
+        font-size: 12px;
+        white-space: nowrap;
       }
       .brand img {
-        width: 148px;
-        height: 54px;
+        height: 52px;
       }
       .hero-copy {
         min-height: 480px;
@@ -599,8 +570,7 @@
       .thanks {
         padding: 18px;
       }
-      .cta-row,
-      .top-actions {
+      .cta-row {
         display: grid;
       }
     }
@@ -610,11 +580,7 @@
   <main class="page">
     <header class="topbar">
       <div class="brand">
-        <img src="./assets/sns-mnm-pro-logo-20260621.jpg" alt="SNS MNM-PRO">
-        <div class="brand-copy">
-          <strong>SNS MNM-PRO</strong>
-          <span>KOUCHA-LAB.COM</span>
-        </div>
+        <img src="./assets/sns-mnm-pro-banner-20260629.jpg" alt="SNS MNM-PRO｜KOUCHA-LAB.COM">
       </div>
       <div class="top-actions">
         <a class="ghost" href="/login">ログイン</a>
@@ -666,11 +632,7 @@
       </section>
 
       <aside class="hero-side panel">
-        <div class="hero-character">
-          <span class="character-badge">テスト販売中｜7日間無料</span>
-          <img src="./assets/sns-mnm-pro-character-20260628.png" alt="紅茶王子｜SNS MNM-PROの案内キャラクター" class="character-img">
-          <div class="character-caption"><strong>紅茶王子</strong>が、あなたのThreads運用を全力サポート。</div>
-        </div>
+        <img src="./assets/sns-mnm-pro-lp-key-visual-20260629.png" alt="SNS MNM-PRO｜投稿ネタ切れを今日で終わらせる。AI×Threads運用支援ツール" class="hero-keyvisual">
       </aside>
     </section>
 
