@@ -3411,6 +3411,12 @@
             </div>
             <div class="actions"><button class="primary" type="button" id="saveApiBtn">保存</button><button class="ghost-btn" type="button" id="testApiBtn">接続テスト</button><span class="muted" id="apiStatus">${state.apiTested ? "接続成功" : state.apiKeyLast4 ? `登録済み：****${esc(state.apiKeyLast4)}` : ""}</span></div>
           </section>
+          ${isRealAdmin() ? `<section class="panel">
+            <div class="panel-head"><div><h2>PayPal 決済設定（管理者専用）</h2><p>Cloudflareに登録した PayPal 認証情報を使って、サブスクPlan（月額¥1,980・7日間無料トライアル）を作成します。</p></div><span class="pill">管理者</span></div>
+            <div class="notice">先に Cloudflare の環境変数 <strong>PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_ENV</strong> を登録して再デプロイしてください。下のボタンで Plan を作成し、表示された <strong>PAYPAL_PLAN_ID</strong> を環境変数に追加します。</div>
+            <div class="actions"><button class="primary" type="button" id="createPaypalPlanBtn">PayPal Planを作成</button><span class="muted" id="paypalPlanStatus"></span></div>
+            <div class="result-box" id="paypalPlanResult" style="display:none"></div>
+          </section>` : ""}
           <section class="panel">
             <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
             ${threadsConnectAvailable() ? "" : `<div class="notice"><strong>Threads連携は順次開放中です（Meta審査申請中）。</strong><br>承認が下り次第、ワンタップ連携を開放します。AI投稿生成・診断・投稿管理などはご自身のOpenAI APIキーで今すぐすべてご利用いただけます。</div>`}
@@ -5039,6 +5045,34 @@
           renderPage("settings", { keepScroll: true });
         } catch (error) {
           showToast(safeApiMessage(error, "OpenAI APIキーの保存に失敗しました"));
+        }
+      });
+      const createPlanBtn = document.querySelector("#createPaypalPlanBtn");
+      if (createPlanBtn) createPlanBtn.addEventListener("click", async () => {
+        const status = document.querySelector("#paypalPlanStatus");
+        const resultBox = document.querySelector("#paypalPlanResult");
+        createPlanBtn.disabled = true;
+        if (status) status.textContent = "作成中…（数秒かかります）";
+        try {
+          const result = await apiFetchJson("/api/admin/paypal-plan", { method: "POST", body: JSON.stringify({}) });
+          if (status) status.textContent = "作成成功";
+          if (resultBox) {
+            resultBox.style.display = "block";
+            resultBox.innerHTML = `
+              <div><strong>✅ Plan作成成功（${esc(result.env)}）</strong></div>
+              <div style="margin-top:8px">PAYPAL_PLAN_ID：</div>
+              <div class="post-text" style="word-break:break-all">${esc(result.plan_id)}</div>
+              <div class="inline-actions" style="margin-top:8px"><button class="small-btn" type="button" data-copy-text="${esc(result.plan_id)}">Plan IDをコピー</button></div>
+              <div class="muted" style="margin-top:8px">この値を Cloudflare の環境変数 <strong>PAYPAL_PLAN_ID</strong> に登録してください。（Product ID 控え：${esc(result.product_id)}）</div>`;
+          }
+        } catch (error) {
+          if (status) status.textContent = "失敗";
+          if (resultBox) {
+            resultBox.style.display = "block";
+            resultBox.textContent = safeApiMessage(error, "Plan作成に失敗しました。環境変数とSandbox設定を確認してください。");
+          }
+        } finally {
+          createPlanBtn.disabled = false;
         }
       });
       const apiTest = document.querySelector("#testApiBtn");
