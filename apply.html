@@ -785,8 +785,8 @@
     <section class="form-section" id="apply-form">
       <section class="apply-form panel">
         <div class="section-head">
-          <h2>お申し込みフォーム</h2>
-          <p>決済前に、お名前、決済名義、メールアドレス、希望プランを確認します。決済確認後、ライセンスキーを手動発行します。</p>
+          <h2>7日間無料ではじめる</h2>
+          <p>下の「PayPalで登録」ボタンから、その場で登録できます。登録後、<strong>PayPalに登録したメールアドレス宛にパスワード設定リンク</strong>が届き、設定すればすぐにご利用いただけます。<br>※下のフォームは任意（事前のご相談・アンケート用）です。購入はPayPalボタンだけで完了します。</p>
         </div>
 
         <div class="form-grid" id="applyForm">
@@ -819,13 +819,14 @@
           <label class="check"><input type="checkbox" required>AI生成には、ご自身のOpenAI APIキーが必要であることを理解しました</label>
           <label class="check"><input type="checkbox" required>OpenAI API利用料は、自身のOpenAIアカウントに基づき発生することを理解しました</label>
           <label class="check"><input type="checkbox" required>初期版ではThreads/Xへの完全自動投稿には対応していないことを理解しました</label>
-          <label class="check"><input type="checkbox" required>決済確認後、管理者がライセンスキーを手動発行することを理解しました</label>
+          <label class="check"><input type="checkbox" required>決済後、PayPalに登録したメール宛にパスワード設定リンクが届くことを理解しました</label>
         </div>
 
-        <div class="notice"><strong>7日間無料・いつでも解約可能</strong>：お申し込み後すぐにご利用開始いただけます。無料期間内（7日以内）に解約された場合、料金は一切発生しません。解約はいつでも support@koucha-lab.com へのご連絡で承ります。決済はPayPalを予定しています（準備中）。</div>
+        <div class="notice"><strong>7日間無料・いつでも解約可能</strong>：登録後すぐにご利用開始いただけます。無料期間（7日以内）に解約された場合、料金は一切発生しません。8日目以降に Lite ¥1,980/月。解約はPayPalの定期支払い設定、または support@koucha-lab.com へのご連絡で承ります。</div>
         <div class="error" id="error"></div>
+        <div id="paypal-button-container" style="max-width:380px;margin:6px 0"></div>
+        <div class="muted" id="paypalNotice" style="font-size:13px;margin-bottom:10px">決済モジュールを読み込み中…</div>
         <div class="cta-row">
-          <button class="primary violet" id="submitBtn" type="button">7日間無料で試す</button>
           <a class="ghost" href="/login">すでに購入済みの方はこちら</a>
         </div>
       </section>
@@ -856,12 +857,11 @@
 
     <section class="thanks panel" id="thanksPanel">
       <div class="section-head">
-        <h2>お申し込みありがとうございます</h2>
-        <p>お申し込み内容を受け付けました。続けて決済ページへお進みください。決済完了後、内容を確認のうえ、ライセンスキーをメールでお送りします。通常、確認後24時間以内にご案内します。</p>
+        <h2>ご登録ありがとうございます！</h2>
+        <p>7日間の無料トライアルがはじまりました。<strong>PayPalに登録したメールアドレス宛に、パスワード設定リンク</strong>をお送りします（数分以内）。リンクからパスワードを設定すると、すぐにログインしてご利用いただけます。<br>メールが届かない場合は迷惑メールフォルダをご確認のうえ、support@koucha-lab.com までご連絡ください。</p>
       </div>
       <div class="cta-row">
-        <a class="primary violet" id="paymentLink" href="#">決済ページへ進む</a>
-        <a class="ghost" href="#plans">プラン一覧へ戻る</a>
+        <a class="ghost" href="/login">ログインページへ</a>
       </div>
     </section>
 
@@ -873,59 +873,63 @@
   </main>
 
   <script>
-    const stripeLinks = {
-      "無料トライアル": "#stripe-trial-unset",
-      "Liteプラン": "#stripe-lite-unset",
-      "Proプラン": "#stripe-pro-unset"
-    };
-
-    const params = new URLSearchParams(location.search);
-    const initialPlan = params.get("plan");
-    const planSelect = document.querySelector("[name='plan']");
-    if (initialPlan && planSelect) {
-      [...planSelect.options].forEach((option) => {
-        if (option.value === initialPlan || option.textContent.includes(initialPlan)) {
-          option.selected = true;
-        }
-      });
-    }
-
     document.querySelector("#purpose")?.addEventListener("change", (event) => {
       document.querySelector("#otherPurposeWrap").hidden = event.target.value !== "その他";
     });
 
-    document.querySelector("#submitBtn")?.addEventListener("click", () => {
-      const scope = document.querySelector("#applyForm");
-      const values = Object.fromEntries(
-        [...scope.querySelectorAll("[name]")].map((item) => [item.name, item.value.trim()])
-      );
-      const checks = [...document.querySelectorAll(".checks input")];
-      const error = document.querySelector("#error");
-      error.textContent = "";
+    function consentOk() {
+      return [...document.querySelectorAll(".checks input")].every((item) => item.checked);
+    }
 
-      if (!values.name || !values.paymentName || !values.email || !values.emailConfirm || !values.plan || !values.purpose) {
-        error.textContent = "必須項目を入力してください。";
-        return;
-      }
-      if (values.email !== values.emailConfirm) {
-        error.textContent = "メールアドレス確認が一致しません。";
-        return;
-      }
-      if (!checks.every((item) => item.checked)) {
-        error.textContent = "すべての同意チェックを確認してください。";
-        return;
-      }
-
-      localStorage.setItem("sns-mnm-pro-application-demo", JSON.stringify({
-        ...values,
-        createdAt: new Date().toISOString()
-      }));
-
+    function showThanks() {
       document.querySelector("#apply-form").style.display = "none";
-      document.querySelector("#thanksPanel").classList.add("active");
-      document.querySelector("#paymentLink").href = stripeLinks[values.plan] || "#stripe-unset";
-      window.scrollTo({ top: document.querySelector("#thanksPanel").offsetTop - 16, behavior: "smooth" });
-    });
+      const thanks = document.querySelector("#thanksPanel");
+      thanks.classList.add("active");
+      window.scrollTo({ top: thanks.offsetTop - 16, behavior: "smooth" });
+    }
+
+    async function initPaypal() {
+      const notice = document.querySelector("#paypalNotice");
+      let cfg = null;
+      try {
+        const res = await fetch("/api/paypal/config");
+        cfg = await res.json();
+      } catch { cfg = null; }
+      if (!cfg || !cfg.configured) {
+        notice.textContent = "ただいま決済の準備中です。少し時間をおいて再度お試しください。";
+        return;
+      }
+      const sdk = document.createElement("script");
+      sdk.src = "https://www.paypal.com/sdk/js?client-id=" + encodeURIComponent(cfg.client_id) + "&vault=true&intent=subscription";
+      sdk.onload = () => renderPaypalButton(cfg);
+      sdk.onerror = () => { notice.textContent = "決済モジュールの読み込みに失敗しました。通信環境をご確認ください。"; };
+      document.head.appendChild(sdk);
+    }
+
+    function renderPaypalButton(cfg) {
+      const notice = document.querySelector("#paypalNotice");
+      notice.textContent = "下のボタンから、PayPalで7日間無料ではじめられます。";
+      if (!window.paypal || !paypal.Buttons) {
+        notice.textContent = "決済モジュールを読み込めませんでした。再読み込みしてください。";
+        return;
+      }
+      paypal.Buttons({
+        style: { shape: "pill", color: "blue", layout: "vertical", label: "subscribe" },
+        onClick: (data, actions) => {
+          if (!consentOk()) {
+            notice.textContent = "先に同意チェックをすべて確認してください。";
+            return actions.reject();
+          }
+          notice.textContent = "";
+          return actions.resolve();
+        },
+        createSubscription: (data, actions) => actions.subscription.create({ plan_id: cfg.plan_id }),
+        onApprove: () => { showThanks(); },
+        onError: () => { notice.textContent = "決済の処理中にエラーが発生しました。時間をおいて再度お試しください。"; }
+      }).render("#paypal-button-container");
+    }
+
+    initPaypal();
   </script>
 </body>
 </html>
