@@ -328,6 +328,8 @@ function commonSystemPrompt() {
     "HUMAN VOICE (avoid AI-smell). This is critical:",
     "- Write like one specific person talking to a friend, with a real opinion and point of view — not like an AI neutrally summarizing a topic.",
     "- 体言止め (ending a sentence on a noun) may appear at most once per post. Almost every sentence must end naturally with a verb, an adjective, a feeling, or a spoken particle (〜んだ / 〜なんですよね / 〜してみて / 〜なりました). Do NOT stack noun-ending fragments to sound punchy.",
+    "- Vary the sentence endings (文末のゆらぎ). Do not use the same ending — です / ます / 体言止め — more than twice in a row. Mix in questions, soft spoken endings (〜んです / 〜なんですよね / 〜ちゃう), and the occasional inversion (倒置) so the rhythm feels like real speech, not a list of equal-length statements.",
+    "- Delete textbook connectives (しかし / また / そして / さらに / つまり) wherever the sentences already flow without them. Spoken Japanese rarely needs them.",
     "- Do NOT reuse a fixed skeleton across candidates. In particular, do not default to this exact AI cliché shape: フック → 「そこじゃない」→ a specific clock time (例: 22:30) + a 'ながらスマホ' scene → 👇 → ①②③ numbered list → 「保存しておくと便利」 → closing question. If you notice you are writing that shape, stop and write differently.",
     "- A numbered ①②③ checklist is ONE option, not a requirement. Many of the strongest posts are pure prose with no list and no 👇. Do not put a list in every candidate.",
     "- Do not invent a generic time-of-day scene (「夜の22:30、〜しながらスマホで」) just to sound concrete. A real opinion, a real example, or a real name is more concrete than a fake scene.",
