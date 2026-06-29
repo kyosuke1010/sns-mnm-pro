@@ -3537,6 +3537,10 @@
       return `<div class="notice">Xはコピー・予約メモ管理に対応。自動投稿と分析取得は後続対応予定です。</div>`;
     }
 
+    function trendField() {
+      return `<label>今のトレンド・流行り語（任意）<span class="field-help">入れた言葉に乗せて投稿を作ります。「Googleで調べる」で今の話題を確認してから使うと安全です。</span><input name="trend" placeholder="例: ラブブ / ぷくぷくシール / 韓国ショップ / codex新情報"><button class="small-btn" type="button" data-google-search="trend" style="margin-top:8px">🔎 Googleで調べる</button></label>`;
+    }
+
     const featureGuides = {
       "day-generate": {
         title: "1日分生成",
@@ -3783,6 +3787,7 @@
         <label>口調<select name="tone"><option>親しみやすい</option><option>プロ向け</option><option>短文</option><option>熱量高め</option></select></label>
         <label>生成数<select name="count"><option>3件</option><option>5件</option><option>10件</option></select></label>
         ${channelSelect()}
+        ${trendField()}
       `, "aiPostResult", `<div class="inline-actions"><button class="small-btn" type="button" data-page="rewrite">ブラッシュアップ</button><button class="small-btn" type="button" data-page="series">シリーズ化</button><button class="small-btn" type="button" data-page="viral">投稿前スコア診断</button><button class="small-btn" type="button" data-page="cta">会話導線を整える</button></div>`);
     }
 
@@ -4187,6 +4192,7 @@
         <label>口調<select name="tone"><option>親しみやすい</option><option>寄り添う形</option><option>論理的</option><option>熱量高め</option><option>やわらかい案内型</option></select></label>
         <label>生成数<select name="count"><option>3件</option><option>5件</option><option>10件</option></select></label>
         ${channelSelect()}
+        ${trendField()}
       `, "bulk-generateResult", `<div class="notice">複数テーマをまとめて実AI生成します。候補ごとに投稿管理保存・予約メモ追加後も個別コピーできます。</div>`);
     }
 
@@ -5253,6 +5259,18 @@
       if (genButton) {
         const feature = genButton.dataset.generate;
         useAiFeature(feature, genButton.dataset.result, (input) => generateText(feature, input));
+        return;
+      }
+      const googleButton = event.target.closest("[data-google-search]");
+      if (googleButton) {
+        const scope = googleButton.closest(".form-grid") || document;
+        const field = scope.querySelector(`[name="${googleButton.dataset.googleSearch}"]`);
+        const query = (field && field.value || "").trim();
+        if (!query) {
+          if (field) field.focus();
+          return;
+        }
+        window.open("https://www.google.com/search?q=" + encodeURIComponent(query), "_blank", "noopener");
         return;
       }
       const copyButton = event.target.closest("[data-copy]");
