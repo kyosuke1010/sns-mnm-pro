@@ -236,6 +236,21 @@ function normalizeGeneratedPosts(feature, input, profile, output, createdAt) {
       createdAt
     })).filter((post) => post.content);
   }
+  if (feature === "bulk-generate") {
+    const topics = String(input.topics || input.theme || input.topic || "")
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return (output.posts || []).map((post, index) => ({
+      topic: post.title || topics[index] || "一括候補",
+      target: post.target || target,
+      purpose,
+      platform,
+      content: post.body,
+      cta: post.cta || profile.cta || "",
+      createdAt
+    })).filter((post) => post.content);
+  }
   if (feature === "thread" || feature === "series") {
     return (output.posts || []).map((post, index) => ({
       topic: input.theme || post.title || (feature === "thread" ? `投稿${index + 1}` : `${index + 1}日目`),

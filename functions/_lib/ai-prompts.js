@@ -23,14 +23,21 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}, opti
   const toneProfile = resolveToneProfile(tone);
   const postTypeProfile = resolvePostTypeProfile(postType, input.purpose || profile.purpose);
   const platform = normalizePlatform(input.channel || input.platform || profile.channels || "Threads");
-  const count = normalizeCount(input.count, feature === "day-generate" ? 3 : (feature === "thread" ? 3 : 3));
   const theme = input.topic || input.theme || input.topics || input.source || input.post || "";
+  // bulk-generate: each non-empty line is its own theme. Keep them as a list so
+  // the prompt can generate one post per theme instead of merging them into one.
+  const topicList = splitLines(input.topics || input.theme || input.topic || theme);
+  const baseCount = normalizeCount(input.count, feature === "day-generate" ? 3 : (feature === "thread" ? 3 : 3));
+  const count = feature === "bulk-generate" && topicList.length
+    ? Math.min(Math.max(topicList.length, 1), 10)
+    : baseCount;
   const inputUnderstanding = options.inputUnderstanding || analyzeUserInput(feature, input, profile);
 
   return {
     feature,
     feature_label: PHASE1_FEATURE_LABELS[feature] || feature,
     theme,
+    topic_list: topicList,
     source_text: input.source || input.post || "",
     keywords: input.keywords || input.keyword || profile.keyword || "",
     target: input.target || profile.target || "",
@@ -345,12 +352,14 @@ function featurePrompt(feature) {
       "The three posts must move emotional temperature forward. Do not write the same post with different role names."
     ],
     "bulk-generate": [
-      "FEATURE: Bulk post candidate generation.",
-      "Create multiple complete post candidates from the provided topic list.",
-      "Each candidate must be independently usable, not a shallow variation of the same sentence.",
-      "If topics are listed line by line, distribute candidates across those topics.",
-      "Use different hooks, emotional angles, concrete scenes, and CTA wording for each candidate.",
-      "Return the candidates in posts array. Candidate labels are handled by the UI."
+      "FEATURE: Bulk post candidate generation from a topic list.",
+      "topic_list (in USER AND MENU CONTEXT) holds the user's themes — one entry per line.",
+      "Create exactly one complete, independently usable post per topic_list entry, in the same order.",
+      "CRITICAL: each post's subject and claim MUST come from its own topic_list entry. Do NOT merge the entries into a single theme, and do NOT replace a topic with a generic profile-based audience or a generic SNS-operation lecture.",
+      "input_understanding and profile are only light background nuance for tone and target; they MUST NOT override or replace the specific topic of each entry. For this feature, ignore input_understanding.main_claim as a single shared anchor — each post follows its own topic line instead.",
+      "Never reuse one sentence template with only a swapped phrase across candidates. Each post must use a different hook, concrete scene, rhythm, and CTA wording.",
+      "Set each post's title to a short label derived from its own topic line.",
+      "Return the posts in posts array in topic_list order. Candidate labels are handled by the UI."
     ],
     thread: [
       "FEATURE: Safe split-post design for Threads.",
@@ -573,6 +582,15 @@ function inferCtaStrength(salesTone = "", purpose = "") {
 function splitList(value) {
   return String(value || "")
     .split(/[、,\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+// Split a multi-line textarea into one trimmed entry per line (keeps commas,
+// since a single theme line may itself contain 、).
+function splitLines(value) {
+  return String(value || "")
+    .split(/\r?\n+/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
