@@ -514,7 +514,13 @@ function fewShotPrompt(feature, platform) {
     "Ref E (real product name, hype):",
     "ChatGPTの新しいやつ、これマジでやばい⁉️ ベンチだけ見たら一個上のモデル超えてる説ある。使ってる人、感想ちょうだい！",
     "",
-    "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜しちゃう), 笑 / www, a real number, a real opinion, the occasional emoji, almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones."
+    "Ref F (thoughtful-but-frank, a sharp metaphor — no emoji needed):",
+    "悪口を気にするかどうかの前に、そもそも誰の意見を聞くかを先に決めておく。信頼できる人の言葉だけ受け取る枠を最初に作る。それ以外は受け取り拒否じゃなくて、そもそも自分宛てじゃない郵便物。開封する理由がない。気にした瞬間、相手と同じステージに降りてる。",
+    "",
+    "Ref G (big-brother coaching, rhetorical question + purposeful 体言止め + plain 俺/キミ):",
+    "運用始めたばかりの人へ。「毎日投稿する」って決意、3日くらいで薄れてきてないか？俺もそうだった。理由はシンプルで、決意があいまいだったから。何を・いつ・誰に・どのくらいの長さで書くか、そこまで決めて、やっと習慣になる。最初の一歩は小さく。キミの「毎日投稿」、もう少し細かく決めてみ？",
+    "",
+    "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits, and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. big-brother) that fits the topic and tone."
   ].join("\n");
   const x = [
     "GOOD X example pattern:",
