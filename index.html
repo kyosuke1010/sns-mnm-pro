@@ -3417,6 +3417,10 @@
             <div class="actions"><button class="ghost-btn" type="button" id="billingMigrateBtn">① 決済DBを準備（初回のみ）</button><span class="muted" id="billingMigrateStatus"></span></div>
             <div class="actions"><button class="primary" type="button" id="createPaypalPlanBtn">② PayPal Planを作成</button><span class="muted" id="paypalPlanStatus"></span></div>
             <div class="result-box" id="paypalPlanResult" style="display:none"></div>
+            <div class="actions" style="margin-top:6px"><button class="ghost-btn" type="button" id="billingStatusBtn">③ 決済テストを確認</button><span class="muted" id="billingStatusStatus"></span></div>
+            <div class="result-box" id="billingStatusResult" style="display:none"></div>
+            <div class="form-grid" style="margin-top:6px"><label>パスワード設定リンクを発行（メール未設定時の確認用）<span class="field-help">購入者のメールを入れて発行 → 出たURLを開けばパスワード設定できます。</span><input id="issueLinkEmail" placeholder="購入者のメールアドレス"><button class="small-btn" type="button" id="issueLinkBtn" style="margin-top:8px">パスワード設定リンクを発行</button></label></div>
+            <div class="result-box" id="issueLinkResult" style="display:none"></div>
           </section>` : ""}
           <section class="panel">
             <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
@@ -5091,6 +5095,49 @@
           }
         } finally {
           createPlanBtn.disabled = false;
+        }
+      });
+      const billingStatusBtn = document.querySelector("#billingStatusBtn");
+      if (billingStatusBtn) billingStatusBtn.addEventListener("click", async () => {
+        const statusEl = document.querySelector("#billingStatusStatus");
+        const box = document.querySelector("#billingStatusResult");
+        billingStatusBtn.disabled = true;
+        if (statusEl) statusEl.textContent = "確認中…";
+        try {
+          const result = await apiFetchJson("/api/admin/billing-status", { method: "GET" });
+          if (statusEl) statusEl.textContent = "";
+          const purchases = (result.purchases || []).map((p) =>
+            `・${esc(p.created_at || "")}｜${esc(p.email || "-")}｜${esc(p.status || "")}｜${esc(p.raw_event_type || p.payment_method || "")}`).join("<br>") || "（まだありません）";
+          const users = (result.users || []).map((u) =>
+            `・${esc(u.email || "-")}｜plan:${esc(u.plan || "")}｜${u.pending_password ? "パスワード未設定" : "設定済み"}｜作成:${esc(u.created_at || "")}`).join("<br>") || "（まだありません）";
+          box.style.display = "block";
+          box.innerHTML = `<div><strong>購入履歴（最新）</strong></div><div class="muted" style="margin:6px 0 12px">${purchases}</div><div><strong>PayPal購入者（最新）</strong></div><div class="muted" style="margin-top:6px">${users}</div>`;
+        } catch (error) {
+          if (statusEl) statusEl.textContent = "失敗";
+          box.style.display = "block";
+          box.textContent = safeApiMessage(error, "確認に失敗しました");
+        } finally {
+          billingStatusBtn.disabled = false;
+        }
+      });
+      const issueLinkBtn = document.querySelector("#issueLinkBtn");
+      if (issueLinkBtn) issueLinkBtn.addEventListener("click", async () => {
+        const email = (document.querySelector("#issueLinkEmail")?.value || "").trim();
+        const box = document.querySelector("#issueLinkResult");
+        if (!email) { showToast("メールアドレスを入力してください"); return; }
+        issueLinkBtn.disabled = true;
+        try {
+          const result = await apiFetchJson("/api/admin/billing-status", { method: "POST", body: JSON.stringify({ email }) });
+          box.style.display = "block";
+          box.innerHTML = `<div><strong>✅ 発行しました（${esc(result.email)}）</strong></div>
+            <div style="margin-top:8px">パスワード設定URL：</div>
+            <div class="post-text" style="word-break:break-all">${esc(result.set_password_url)}</div>
+            <div class="inline-actions" style="margin-top:8px"><button class="small-btn" type="button" data-copy-text="${esc(result.set_password_url)}">URLをコピー</button><a class="small-btn" href="${esc(result.set_password_url)}" target="_blank" rel="noopener">開く</a></div>`;
+        } catch (error) {
+          box.style.display = "block";
+          box.textContent = safeApiMessage(error, "発行に失敗しました");
+        } finally {
+          issueLinkBtn.disabled = false;
         }
       });
       const apiTest = document.querySelector("#testApiBtn");
