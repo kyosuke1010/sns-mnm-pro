@@ -71,31 +71,40 @@ export const VOICE_REFERENCES = [
   {
     id: "J",
     tag: "young-male",
-    label: "young male, 僕/タメ口, self-disclosure + 笑/emoji",
-    text: "正直さ、最初の3ヶ月はまじで誰にも読まれてなくて、スマホ伏せて寝るのが日課やったわ😂 でも毎晩ちょっとずつ投稿いじってたら、ある日いきなり伸びた。才能ちゃうねん、ただ「続けた回数」やった。"
+    label: "young male, AI-tool meta-humor, emoji at the peak only",
+    text: "ChatGPTに投稿文つくらせたら、なんか…丁寧すぎて笑えたwww\n「ご存知の方も多いかと思いますが」って誰が言うんそれ笑\nプロンプトに「友達に話すみたいに」って一言足したら全然違うやつ出てきた✨\n言葉ひとつで変わるから、まだ試してない人はやってみて😊"
   },
   {
     id: "K",
     tag: "young-male",
-    label: "young male, 甘め, talking to ONE person",
-    text: "きみのその投稿、ぜんぜん悪くないよ。むしろ良い。ただ最初の1行が「説明」になってるだけ。そこを「きみが心の中でつぶやいた一言」に変えると、急に止まるようになる。だまされたと思って明日やってみ？"
+    label: "young male, tiny specific observation, short rhythm",
+    text: "昨日おんなじネタで3パターン書いてみたんだけど、一番バズったの一番短いやつだった。\n「もっと説明しなきゃ」って思いがち、僕もずっとそう思ってた。\nでも読んでる側って、ほんとに最初の2行しか見てないんだよね😅\n長く書くのって、自分の安心のためだったのかもしれない。"
   },
   {
     id: "L",
     tag: "young-male",
-    label: "young male, hype + real product names + emoji",
-    text: "ChatGPTとClaude両方ガッツリ触ってる僕の結論：ネタ出しはChatGPT、文章の温度感はClaudeが強い🥹 1個に絞らんでよくて、作業ごとに使い分けるだけで投稿づくりまじで楽になるで。"
+    label: "young male, honest confession, low→warm arc",
+    text: "正直に言う。\n投稿が伸びなかった時期、内容よりも「反応ゼロが怖かった」だけだった🫠\nバズるかどうかより、下書きに逃げてた。\n今は気にしないようにしてるけど、最初はほんとそれだけで止まってたな。\n同じような時期あった人いる？"
   },
   {
     id: "M",
     tag: "young-male",
-    label: "young male, low→warm emotional arc, one-person",
-    text: "伸びない日が続くと、自分のセンスを疑うよな。わかる、僕も毎回そう思う。でもな、数字が動かん時はだいたい「誰に向けてるか」がぼやけてるだけ。一人だけ思い浮かべて書いた投稿は、ちゃんと誰かに刺さる。大丈夫、まだ全然いける。"
+    label: "young male, warm community moment, light joke",
+    text: "フォロワーさんに「投稿見てます」ってDMもらえた日、地味にすごくうれしかった😊\nインプとかフォロワー数じゃなくて、こういう一言がいちばん続ける理由になる気がする。\nありがとうって言いたいから、僕も誰かの投稿にちゃんとコメントしようって思った日でした🙏"
+  },
+  {
+    id: "N",
+    tag: "trend-hook",
+    label: "trend → emotional reaction → pivot to posting, conversational",
+    text: "亀梨くん結婚、知ったとき正直「え」ってなったwww\n\nなんか、時代が動いた感じがした。\nこういう日ってタイムラインが急にざわざわするじゃないですか。\n\n僕が気になるのは、こういう日に「何も投稿しない」人が多いこと。\n感じたことをそのままの言葉で出すだけで、普段の3倍くらい反応もらえる日ってある。\n\nトレンドに乗るって、うまいことを言わなくていいんだよね😊\n「え、知ってた？」「なんか寂しいな」その一言で十分だったりする。\n\n今日みんな、何か投稿した？"
   }
 ];
 
-export const VOICE_REFERENCES_NOTICE =
-  "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits, and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます. Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. big-brother vs. young-male 僕-voice) that fits the topic and tone.";
+export const VOICE_REFERENCES_NOTICE = [
+  "Notice across the refs: spoken endings (〜やった / 〜のよ / 〜なんだよね / 〜してみ？ / 〜だけだった), 笑 / www, a sharp metaphor (郵便物), rhetorical questions, a real number, a real opinion, emoji only when it fits naturally (never one per line), and 体言止め used on purpose once or twice for punch (NOT stacked). Almost no stiff です・ます.",
+  "For friendly / energetic tones with a young male voice (僕 / フランク / 甘め): use Ref J–N as the primary register target. Key traits — light self-deprecation that stays confident, a small specific failure before the pivot, a genuine question that invites the reader to share rather than perform, and emoji placed at emotional peaks only (not decoratively). The warmth should feel effortless, not performed. A small joke lands better when it arrives without a setup.",
+  "Reproduce THIS register for friendly / energetic tones; pick the flavor (emoji-light thoughtful vs. warm-emoji vs. young-male-frank) that fits the topic and tone."
+].join("\n");
 
 // 生成プロンプトに差し込む VOICE REFERENCE ブロック文字列を組み立てる。
 export function renderVoiceReferences() {
