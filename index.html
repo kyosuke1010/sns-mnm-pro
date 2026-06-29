@@ -3414,7 +3414,8 @@
           ${isRealAdmin() ? `<section class="panel">
             <div class="panel-head"><div><h2>PayPal 決済設定（管理者専用）</h2><p>Cloudflareに登録した PayPal 認証情報を使って、サブスクPlan（月額¥1,980・7日間無料トライアル）を作成します。</p></div><span class="pill">管理者</span></div>
             <div class="notice">先に Cloudflare の環境変数 <strong>PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET / PAYPAL_ENV</strong> を登録して再デプロイしてください。下のボタンで Plan を作成し、表示された <strong>PAYPAL_PLAN_ID</strong> を環境変数に追加します。</div>
-            <div class="actions"><button class="primary" type="button" id="createPaypalPlanBtn">PayPal Planを作成</button><span class="muted" id="paypalPlanStatus"></span></div>
+            <div class="actions"><button class="ghost-btn" type="button" id="billingMigrateBtn">① 決済DBを準備（初回のみ）</button><span class="muted" id="billingMigrateStatus"></span></div>
+            <div class="actions"><button class="primary" type="button" id="createPaypalPlanBtn">② PayPal Planを作成</button><span class="muted" id="paypalPlanStatus"></span></div>
             <div class="result-box" id="paypalPlanResult" style="display:none"></div>
           </section>` : ""}
           <section class="panel">
@@ -5045,6 +5046,23 @@
           renderPage("settings", { keepScroll: true });
         } catch (error) {
           showToast(safeApiMessage(error, "OpenAI APIキーの保存に失敗しました"));
+        }
+      });
+      const billingMigrateBtn = document.querySelector("#billingMigrateBtn");
+      if (billingMigrateBtn) billingMigrateBtn.addEventListener("click", async () => {
+        const status = document.querySelector("#billingMigrateStatus");
+        billingMigrateBtn.disabled = true;
+        if (status) status.textContent = "準備中…";
+        try {
+          const result = await apiFetchJson("/api/admin/billing-migrate", { method: "POST", body: JSON.stringify({}) });
+          if (status) status.textContent = result.ok ? `完了（適用${result.applied_count} / スキップ${result.skipped_count}）` : "一部失敗";
+          if (!result.ok) showToast("決済DBの一部適用に失敗しました");
+          else showToast("決済DBの準備が完了しました");
+        } catch (error) {
+          if (status) status.textContent = "失敗";
+          showToast(safeApiMessage(error, "決済DBの準備に失敗しました"));
+        } finally {
+          billingMigrateBtn.disabled = false;
         }
       });
       const createPlanBtn = document.querySelector("#createPaypalPlanBtn");
