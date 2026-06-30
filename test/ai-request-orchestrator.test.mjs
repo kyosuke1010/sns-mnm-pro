@@ -65,12 +65,25 @@ async function testProfileFallback() {
   ok("profile reference fills missing fields without overriding the request");
 }
 
+async function testEmptyRequestFallsBackSafely() {
+  const result = await orchestrateRequest({ userRequest: "" });
+
+  assert.equal(result.postCount, 3);
+  assert.ok(result.ambiguities.includes("target_not_explicit"));
+  assert.ok(result.ambiguities.includes("tone_not_explicit"));
+  assert.ok(result.ambiguities.includes("post_type_not_explicit"));
+  assert.equal(result.nextLayer, "generation");
+  assert.equal(result.featureKey, "bulk-generate");
+  ok("empty request returns a safe default generation plan");
+}
+
 async function main() {
   console.log("ai-request-orchestrator tests");
   await testWeeklyFivePosts();
   await testAmbiguousTargetIsHonest();
   await testSpecificFeatureRouting();
   await testProfileFallback();
+  await testEmptyRequestFallsBackSafely();
   console.log(`\nAll ${passed} checks passed.`);
 }
 
