@@ -1369,6 +1369,7 @@
       genre: "AI SNSマーケティング",
       target: "Threads運用で見込み客を増やしたい個人事業主",
       tone: "親しみやすい",
+      dialect: "標準語",
       product: "SNS MNM-PRO",
       url: "",
       keyword: "",
@@ -3463,6 +3464,7 @@
               ${profileInput("発信ジャンル", "genre")}
               ${profileInput("ターゲット", "target")}
               ${profileInput("口調", "tone")}
+              <label>文体（標準語 / 関西弁）<span class="field-help">生成の既定の文体。各生成画面で都度切り替えもできます。</span><select name="dialect"><option ${(state.profile.dialect || "標準語") === "標準語" ? "selected" : ""}>標準語</option><option ${state.profile.dialect === "関西弁" ? "selected" : ""}>関西弁</option></select></label>
               ${profileInput("商品名/サービス名", "product")}
               ${profileInput("禁止表現", "banned")}
               ${profileInput("投稿目的", "purpose")}
@@ -3554,6 +3556,11 @@
 
     function xPolicyNotice() {
       return `<div class="notice">Xはコピー・予約メモ管理に対応。自動投稿と分析取得は後続対応予定です。</div>`;
+    }
+
+    function dialectSelect() {
+      const selected = state.profile.dialect || "標準語";
+      return `<label>文体（標準語 / 関西弁）<span class="field-help">関西弁にすると語尾とリズムで一気に人間っぽくなります。迷ったら標準語でOK。</span><select name="dialect"><option ${selected === "標準語" ? "selected" : ""}>標準語</option><option ${selected === "関西弁" ? "selected" : ""}>関西弁</option></select></label>`;
     }
 
     function trendField() {
@@ -3804,6 +3811,7 @@
         <label>投稿目的<select name="purpose"><option>フォロワーを増やしたい</option><option>保存されたい</option><option>返信を増やしたい</option><option>商品やサービスへ誘導したい</option><option>アフィリエイトにつなげたい</option><option>信頼感を高めたい</option></select></label>
         <label>投稿タイプ<select name="type"><option>共感型</option><option>保存型</option><option>失敗談型</option><option>チェックリスト型</option><option>比較型</option><option>反論型</option><option>ストーリー型</option><option>商品導線型</option></select></label>
         <label>口調<select name="tone"><option>親しみやすい</option><option>プロ向け</option><option>短文</option><option>熱量高め</option></select></label>
+        ${dialectSelect()}
         <label>生成数<select name="count"><option>3件</option><option>5件</option><option>10件</option></select></label>
         ${channelSelect()}
         ${trendField()}
@@ -3816,6 +3824,7 @@
         <label>ターゲット<input name="target" value="${esc(state.profile.target)}"></label>
         <label>投稿目的<select name="purpose"><option>見込み客獲得</option><option>保存狙い</option><option>返信狙い</option></select></label>
         <label>口調<input name="tone" value="${esc(state.profile.tone)}"></label>
+        ${dialectSelect()}
         <label>導線<input name="cta" placeholder="必要な時だけ、今回の投稿に入れる自然な導線を入力"></label>
         <label>話しかけテーマ<input name="keyword" placeholder="例: 設計、継続、反応、案内"></label>
         ${channelSelect()}
@@ -3830,6 +3839,7 @@
         <label>ターゲット<input name="target" value="${esc(state.profile.target)}"></label>
         <label>投稿目的<input name="purpose" value="${esc(state.profile.purpose)}"></label>
         <label>口調<input name="tone" value="${esc(state.profile.tone)}"></label>
+        ${dialectSelect()}
         ${channelSelect()}
       `, `${page}Result`, isThread ? `
         <div class="notice">1つのテーマを、読みやすい複数投稿に分けて設計します。短時間の連投や同じCTAの繰り返しは避け、安全寄りの投稿構成を作ります。</div>
@@ -3843,6 +3853,7 @@
         <label>元投稿文<textarea name="source" placeholder="ブラッシュアップしたい投稿文を入力"></textarea></label>
         <label>ブラッシュアップ目的<select name="purpose"><option>短くする</option><option>親しみやすくする</option><option>保存されやすくする</option><option>返信されやすくする</option><option>売り込み感を弱める</option><option>X向けに短文化</option><option>Threads向けに改行調整</option><option>冒頭を強くする</option><option>締め文を自然にする</option></select></label>
         <label>口調<input name="tone" value="${esc(state.profile.tone)}"></label>
+        ${dialectSelect()}
         ${channelSelect()}
       `, "rewriteResult");
     }
@@ -3852,6 +3863,7 @@
         <label>投稿文<textarea name="post" placeholder="会話導線を整えたい投稿文"></textarea></label>
         <label>話しかけテーマ<select name="keyword"><option>設計</option><option>継続</option><option>反応</option><option>案内</option><option>自己紹介</option><option>悩み共有</option></select></label>
         <label>会話目的<select name="conversationGoal"><option>悩みを聞く</option><option>状況を聞く</option><option>自己紹介してもらう</option><option>体験談を聞く</option><option>どちら派か聞く</option><option>商品案内につなげる</option><option>固定投稿へ自然に流す</option><option>プロフィールへ自然に流す</option><option>保存してもらう</option></select></label>
+        ${dialectSelect()}
         <label>投稿先<select name="channel"><option>Threads</option><option>X</option><option>Threads / X 両方</option></select></label>
       `, "ctaResult", `<div class="notice">投稿文をもとに、読者が自然に悩み・状況・経験を話しやすくなる流れへ整えます。返信稼ぎに見える表現は避けます。</div>`);
     }

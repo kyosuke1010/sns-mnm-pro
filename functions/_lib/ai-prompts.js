@@ -47,6 +47,7 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}, opti
     platform,
     tone,
     tone_profile: toneProfile,
+    dialect: normalizeDialect(input.dialect || profile.dialect),
     post_type: postType,
     post_type_profile: postTypeProfile,
     post_count: count,
@@ -86,6 +87,8 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     featurePrompt(feature),
     "",
     tonePrompt(context),
+    "",
+    dialectPrompt(context),
     "",
     postTypePrompt(context),
     "",
@@ -480,6 +483,26 @@ function tonePrompt(context) {
     `Sales intensity: ${tone.sales}`,
     `Vocabulary tendency: ${tone.vocabulary.join(", ")}`,
     "Apply this tone to the actual writing, not only to the ending."
+  ].join("\n");
+}
+
+// Dialect axis (標準語 / 関西弁 …), orthogonal to tone. Kansai reads very human
+// because its endings and rhythm break the AI register on their own.
+function normalizeDialect(value) {
+  const v = String(value || "").trim();
+  if (/関西|大阪|kansai/i.test(v)) return "関西弁";
+  return "標準語";
+}
+
+function dialectPrompt(context) {
+  if (context.dialect !== "関西弁") return "";
+  return [
+    "DIALECT: 関西弁 (Kansai-ben).",
+    "Write the post in natural, everyday Kansai-ben — the way a real Osaka-area person actually posts, not a stereotyped comedy routine.",
+    "Use Kansai endings and vocabulary where they fall naturally: 〜やん / 〜やねん / 〜やで / 〜やろ / 〜へん / 〜てもうた / 〜ちゃう / 〜んねん / 〜なぁ, ほんま / めっちゃ / なんでやねん / しんどい / ええ / あかん.",
+    "Do NOT force every single sentence into dialect or pile on 「〜でっせ」「〜まんがな」old-man clichés. A real speaker mixes; keep it modern and effortless.",
+    "Keep the meaning, target, tone, and post type exactly as specified — only the spoken surface becomes Kansai.",
+    "Closing questions also go Kansai (例:「みんなどうしてる？」ではなく「みんなどうしてる？…って気になるねんけど、どう？」/「〜な人おる？」)."
   ].join("\n");
 }
 
