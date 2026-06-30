@@ -39,6 +39,19 @@ function testDangerousCtaFails() {
   ok("dangerous CTA is measured and fails");
 }
 
+function testNaturalWantPhraseDoesNotFail() {
+  const result = critiqueGeneration({
+    postText: [
+      "この整理で助かる人もいると思うので、必要な人がいたら教えてください。",
+      "今の状況に合わせて、どこから整えると楽か一緒に考えます。"
+    ].join("\n")
+  });
+
+  assert.equal(result.results.find((item) => item.item === "危険CTA").verdict, "pass");
+  assert.notEqual(result.overallVerdict, "fail");
+  ok("natural want/need phrase does not fail without nearby reward bait");
+}
+
 function testSalesPressureWarns() {
   const result = critiqueGeneration({
     postText: "今すぐ登録してください。限定の案内なので、購入したい人は今日中に申し込みましょう。"
@@ -62,6 +75,7 @@ function main() {
   console.log("ai-qa-critic tests");
   testCleanPostPassesMeasuredChecks();
   testDangerousCtaFails();
+  testNaturalWantPhraseDoesNotFail();
   testSalesPressureWarns();
   testEmptyBodyFailsViaExistingAggregate();
   console.log(`\nAll ${passed} checks passed.`);
