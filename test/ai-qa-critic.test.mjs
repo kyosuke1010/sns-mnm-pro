@@ -58,6 +58,7 @@ function testSalesPressureWarns() {
   });
 
   assert.equal(result.overallVerdict, "warn");
+  assert.equal(result.autoFixable, false);
   assert.equal(result.results.find((item) => item.item === "売り込み感").verdict, "warn");
   ok("small sales-pressure check warns instead of pretending full semantic coverage");
 }

@@ -67,7 +67,7 @@ export function critiqueGeneration({
       ? WARN
       : PASS;
 
-  const autoFixable = overallVerdict !== PASS;
+  const autoFixable = overallVerdict === FAIL;
   const fixSuggestion = buildFixSuggestion(results, quality);
 
   return {
@@ -114,6 +114,8 @@ function collectText(feature, output, fallback = "") {
 function templateResult(quality, objective, text = "") {
   const dangerousCta = detectDangerousCta(text);
   const rawFlags = [...new Set([...(quality.objectiveFlags || []), ...(objective.flags || [])])];
+  // 危険CTAは専用判定(dangerousCtaResult)で評価するため、
+  // 実際の危険CTAが無い場合はテンプレ感側の bait 誤検知を抑制する。
   const effectiveFlags = dangerousCta.length ? rawFlags : rawFlags.filter((flag) => flag !== "bait");
   const effectiveHardFail = objective.hardFail && (objective.flags || []).some((flag) => flag !== "bait" || dangerousCta.length);
   const aggregateShouldRetry = quality.shouldRetry && !((quality.objectiveFlags || []).includes("bait") && !dangerousCta.length);
