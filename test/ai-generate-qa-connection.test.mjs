@@ -45,7 +45,7 @@ function testQaResultBuiltAfterGenerationBeforeInsert() {
 function testResponseIncludesQaResult() {
   assert.ok(source.includes("qaResult"));
   assert.ok(source.indexOf("qaResult") < source.lastIndexOf("Response.json"));
-  assert.ok(source.includes("output,\n      qaResult"));
+  assert.ok(/output\s*,\s*qaResult/.test(source));
   ok("Response.json includes qaResult");
 }
 
