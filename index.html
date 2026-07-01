@@ -2951,7 +2951,8 @@
         text: formatAiOutput(feature, data.output),
         output: data.output,
         historyId: data.history_id,
-        savedPosts: data.saved_posts
+        savedPosts: data.saved_posts,
+        qaResult: data.qaResult
       };
     }
 
@@ -3229,6 +3230,10 @@
           addHistory(aiFeatures[feature], output.topic, output.text, output);
           const rawOutput = output.output || output;
           const generatedRecord = buildGeneratedRecord(feature, input, rawOutput, output.text, "下書き");
+          if (output.qaResult) {
+            generatedRecord.qaResult = output.qaResult;
+            generatedRecord.qaVerdict = output.qaResult.overallVerdict;
+          }
           if (target) {
             target.dataset.generatedText = output.text;
             target.dataset.generatedTopic = output.topic || "";
@@ -5435,23 +5440,11 @@
         const cached = generatedResultCache.get(saveButton.dataset.savePost);
         const record = cached || (target ? (target.dataset.copyText || target.innerText) : "");
         if (record && typeof record === "object") {
-          const critiqueGeneration = window.critiqueGeneration || ((payload) => ({
-            overallVerdict: "pass",
-            autoFixable: false,
-            fixSuggestion: "",
-            results: []
-          }));
-          const critiqueResult = critiqueGeneration({
-            postText: record.text,
-            expectedTone: record.tone_label || record.tone,
-            expectedPostType: record.type,
-            hasCTA: false
-          });
-          record.qaResult = critiqueResult;
-          record.qaVerdict = critiqueResult.overallVerdict;
+          const critiqueResult = record.qaResult;
+          if (critiqueResult && !record.qaVerdict) record.qaVerdict = critiqueResult.overallVerdict;
           const previousQa = saveButton.parentElement?.querySelector("[data-save-qa-summary]");
           if (previousQa) previousQa.remove();
-          if (critiqueResult.overallVerdict === "warn" || critiqueResult.overallVerdict === "fail") {
+          if (critiqueResult && (critiqueResult.overallVerdict === "warn" || critiqueResult.overallVerdict === "fail")) {
             const summary = document.createElement("div");
             summary.dataset.saveQaSummary = "1";
             summary.className = critiqueResult.overallVerdict === "fail" ? "notice error" : "notice";

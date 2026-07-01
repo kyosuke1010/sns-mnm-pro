@@ -2,9 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const start = html.indexOf('const saveButton = event.target.closest("[data-save-post]");');
-const end = html.indexOf('const saveTextButton = event.target.closest("[data-save-text]");');
-const handler = html.slice(start, end);
+const generateStart = html.indexOf("async function generateWithServer");
+const generateEnd = html.indexOf("async function diagnoseWithServer");
+const generateWithServer = html.slice(generateStart, generateEnd);
+const flowStart = html.indexOf("const rawOutput = output.output || output;");
+const flowEnd = html.indexOf("if (isServerAiFeature(feature))", flowStart);
+const generationFlow = html.slice(flowStart, flowEnd);
+const saveStart = html.indexOf('const saveButton = event.target.closest("[data-save-post]");');
+const saveEnd = html.indexOf('const saveTextButton = event.target.closest("[data-save-text]");');
+const saveHandler = html.slice(saveStart, saveEnd);
 
 let passed = 0;
 function ok(label) {
@@ -12,38 +18,44 @@ function ok(label) {
   console.log("  ✓ " + label);
 }
 
-function testCritiqueBeforeAddPost() {
-  assert.ok(start > 0, "save-post handler exists");
-  assert.ok(handler.indexOf("critiqueGeneration(") > 0, "critiqueGeneration is called");
-  assert.ok(handler.indexOf("critiqueGeneration(") < handler.lastIndexOf("addPost("), "critique runs before addPost");
-  ok("critiqueGeneration is called before addPost");
+function testServerQaResultIsCarriedToOutput() {
+  assert.ok(generateWithServer.includes("qaResult: data.qaResult"));
+  ok("generateWithServer carries server qaResult");
 }
 
-function testQaResultAttachedToRecord() {
-  assert.ok(handler.includes("record.qaResult = critiqueResult"));
-  assert.ok(handler.includes("record.qaVerdict = critiqueResult.overallVerdict"));
-  ok("qaResult and qaVerdict are attached to the record");
+function testQaResultAttachedToGeneratedRecord() {
+  assert.ok(generationFlow.includes("generatedRecord.qaResult = output.qaResult"));
+  assert.ok(generationFlow.includes("generatedRecord.qaVerdict = output.qaResult.overallVerdict"));
+  ok("server qaResult is attached to generatedRecord before caching");
 }
 
-function testPassKeepsExistingFlow() {
-  assert.ok(handler.includes('critiqueResult.overallVerdict === "warn" || critiqueResult.overallVerdict === "fail"'));
-  assert.ok(handler.includes('overallVerdict: "pass"'));
-  ok("pass verdict does not enter the warn/fail confirmation branch");
+function testWindowCritiqueGenerationRemoved() {
+  assert.equal(html.includes("window.critiqueGeneration"), false);
+  assert.equal(saveHandler.includes("critiqueGeneration("), false);
+  ok("window.critiqueGeneration call is removed from index.html");
+}
+
+function testSaveHandlerUsesExistingQaResultBeforeAddPost() {
+  assert.ok(saveHandler.indexOf("const critiqueResult = record.qaResult") > 0);
+  assert.ok(saveHandler.indexOf("const critiqueResult = record.qaResult") < saveHandler.lastIndexOf("addPost("));
+  assert.ok(saveHandler.includes("record.qaVerdict = critiqueResult.overallVerdict"));
+  ok("save handler uses record.qaResult before addPost");
 }
 
 function testWarnFailSummaryAndHumanOverride() {
-  assert.ok(handler.includes('critiqueResult.overallVerdict === "fail" ? "QA: 要確認" : "QA: 注意"'));
-  assert.ok(handler.includes("critiqueResult.fixSuggestion"));
-  assert.ok(handler.includes('saveButton.dataset.qaConfirmed !== "1"'));
-  assert.ok(handler.includes("もう一度"));
+  assert.ok(saveHandler.includes('critiqueResult.overallVerdict === "warn" || critiqueResult.overallVerdict === "fail"'));
+  assert.ok(saveHandler.includes("critiqueResult.fixSuggestion"));
+  assert.ok(saveHandler.includes('saveButton.dataset.qaConfirmed !== "1"'));
+  assert.ok(saveHandler.includes("もう一度"));
   ok("warn/fail display a summary and allow a second-click save");
 }
 
 function main() {
   console.log("qa save-post connection tests");
-  testCritiqueBeforeAddPost();
-  testQaResultAttachedToRecord();
-  testPassKeepsExistingFlow();
+  testServerQaResultIsCarriedToOutput();
+  testQaResultAttachedToGeneratedRecord();
+  testWindowCritiqueGenerationRemoved();
+  testSaveHandlerUsesExistingQaResultBeforeAddPost();
   testWarnFailSummaryAndHumanOverride();
   console.log(`\nAll ${passed} checks passed.`);
 }
