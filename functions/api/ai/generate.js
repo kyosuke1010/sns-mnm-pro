@@ -11,6 +11,8 @@ import { buildGenerationPrompt, buildDiagnosisPrompt, normalizeGenerationInput, 
 import { outputSchema } from "../../_lib/ai-schemas.js";
 import { evaluateGenerationQuality, retryInstruction } from "../../_lib/ai-quality.js";
 import { understandInput } from "../../_lib/ai-input-understanding-llm.js";
+import { orchestrateRequest } from "../../_lib/ai-request-orchestrator.js";
+import { critiqueGeneration } from "../../_lib/ai-qa-critic.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -31,6 +33,7 @@ export async function onRequestPost({ request, env }) {
     const rawProfile = body.profile && typeof body.profile === "object" ? body.profile : {};
     const profile = sanitizeProfileForGeneration(rawProfile);
     const model = modelConfig(settings.modelMode, env);
+    await applyNaturalRequestOrchestration(input);
 
     // Diagnosis features (viral score / AB compare) evaluate existing posts.
     // They do not run the generative quality loop and save no draft posts.
@@ -82,13 +85,14 @@ export async function onRequestPost({ request, env }) {
     }
 
     const now = new Date().toISOString();
+    const posts = normalizeGeneratedPosts(feature, input, profile, output, now);
+    const qaResults = buildQaResultForGeneratedPosts(feature, input, posts, output);
     const historyId = crypto.randomUUID();
     await env.DB.prepare(`
       INSERT INTO generation_history (id, user_id, feature_key, input_json, output_json, created_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `).bind(historyId, user.userId, feature, safeJson({ input, profile, normalized_context: context }), safeJson(output), now).run();
 
-    const posts = normalizeGeneratedPosts(feature, input, profile, output, now);
     for (const post of posts) {
       await env.DB.prepare(`
         INSERT INTO generated_posts (id, user_id, type, created_at, topic, target, purpose, platform, content, cta, status)
@@ -119,7 +123,9 @@ export async function onRequestPost({ request, env }) {
         attempts,
         reason: quality.reason
       },
-      output
+      output,
+      qaResults,
+      qaResult: qaResults[0]?.qaResult || null
     });
   } catch (error) {
     return openAiErrorResponse(error);
@@ -127,6 +133,56 @@ export async function onRequestPost({ request, env }) {
 }
 
 const DIAGNOSIS_FEATURES = new Set(["viral", "ab-test", "score", "buzz-pattern", "buzz-research"]);
+
+export async function applyNaturalRequestOrchestration(input, orchestrator = orchestrateRequest) {
+  if (!input || typeof input !== "object" || input.requestMode !== "natural") return input;
+  const orchestratorResult = await orchestrator({ userRequest: input.userRequest });
+  input.postCount = orchestratorResult.postCount;
+  input.tone = orchestratorResult.tone;
+  input.postType = orchestratorResult.postType;
+  input.featureKey = orchestratorResult.featureKey;
+  input.orchestratorAmbiguities = orchestratorResult.ambiguities || [];
+  return input;
+}
+
+export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, posts = [], output = null, critic = critiqueGeneration) {
+  const sourcePosts = Array.isArray(output?.posts) ? output.posts : [];
+  const normalizedPosts = Array.isArray(posts) ? posts : [];
+  if (normalizedPosts.length && sourcePosts.length) {
+    return normalizedPosts.map((post, index) => {
+      const sourcePost = sourcePosts[index] || {};
+      const postText = [post.content, post.cta].filter(Boolean).join("\n");
+      const singleOutput = { ...output, posts: [sourcePost] };
+      return {
+        index,
+        qaResult: critic({
+          feature,
+          output: singleOutput,
+          postText,
+          expectedTone: input.tone,
+          expectedPostType: input.postType || input.type,
+          hasCTA: false
+        })
+      };
+    });
+  }
+
+  const postText = normalizedPosts
+    .map((post) => [post.content, post.cta].filter(Boolean).join("\n"))
+    .filter(Boolean)
+    .join("\n\n");
+  return [{
+    index: 0,
+    qaResult: critic({
+      feature,
+      output,
+      postText,
+      expectedTone: input.tone,
+      expectedPostType: input.postType || input.type,
+      hasCTA: false
+    })
+  }];
+}
 
 async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {
   if (feature === "viral" && !String(input.post || "").trim()) {

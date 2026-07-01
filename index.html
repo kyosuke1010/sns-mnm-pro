@@ -2951,8 +2951,34 @@
         text: formatAiOutput(feature, data.output),
         output: data.output,
         historyId: data.history_id,
-        savedPosts: data.saved_posts
+        savedPosts: data.saved_posts,
+        qaResults: data.qaResults || [],
+        qaResult: data.qaResult
       };
+    }
+
+    function representativeQaResult(qaResults = [], fallback = null) {
+      const results = (Array.isArray(qaResults) ? qaResults : [])
+        .map((item) => item?.qaResult)
+        .filter(Boolean);
+      const severity = { fail: 3, warn: 2, pass: 1 };
+      return results.sort((a, b) => (severity[b.overallVerdict] || 0) - (severity[a.overallVerdict] || 0))[0] || fallback;
+    }
+
+    function attachQaResultsToGeneratedRecord(record, qaResults = [], fallback = null) {
+      if (!record || typeof record !== "object") return record;
+      const items = Array.isArray(qaResults) ? qaResults : [];
+      record.qaResults = items;
+      record.children = (record.children || []).map((child, index) => {
+        const childQa = items.find((item) => Number(item?.index) === index)?.qaResult;
+        return childQa ? { ...child, qaResult: childQa, qaVerdict: childQa.overallVerdict } : child;
+      });
+      const critiqueResult = representativeQaResult(items, fallback);
+      if (critiqueResult) {
+        record.qaResult = critiqueResult;
+        record.qaVerdict = critiqueResult.overallVerdict;
+      }
+      return record;
     }
 
     async function diagnoseWithServer(feature, input) {
@@ -3229,6 +3255,7 @@
           addHistory(aiFeatures[feature], output.topic, output.text, output);
           const rawOutput = output.output || output;
           const generatedRecord = buildGeneratedRecord(feature, input, rawOutput, output.text, "下書き");
+          attachQaResultsToGeneratedRecord(generatedRecord, output.qaResults, output.qaResult);
           if (target) {
             target.dataset.generatedText = output.text;
             target.dataset.generatedTopic = output.topic || "";
@@ -5433,7 +5460,35 @@
         if (isPreviewMode()) return blockPreviewAction(saveButton.dataset.savePost);
         const target = document.querySelector(saveButton.dataset.savePost);
         const cached = generatedResultCache.get(saveButton.dataset.savePost);
-        addPost(cached || (target ? (target.dataset.copyText || target.innerText) : ""), saveButton.dataset.type || "AI生成");
+        const record = cached || (target ? (target.dataset.copyText || target.innerText) : "");
+        if (record && typeof record === "object") {
+          const critiqueResult = record.qaResult;
+          if (critiqueResult && !record.qaVerdict) record.qaVerdict = critiqueResult.overallVerdict;
+          const previousQa = saveButton.parentElement?.querySelector("[data-save-qa-summary]");
+          if (previousQa) previousQa.remove();
+          if (critiqueResult && (critiqueResult.overallVerdict === "warn" || critiqueResult.overallVerdict === "fail")) {
+            const summary = document.createElement("div");
+            summary.dataset.saveQaSummary = "1";
+            summary.className = critiqueResult.overallVerdict === "fail" ? "notice error" : "notice";
+            const items = (critiqueResult.results || [])
+              .filter((item) => item.verdict === critiqueResult.overallVerdict)
+              .map((item) => `${item.item}: ${item.reason}`)
+              .join(" / ");
+            summary.textContent = [
+              critiqueResult.overallVerdict === "fail" ? "QA: 要確認" : "QA: 注意",
+              items,
+              critiqueResult.fixSuggestion ? `修正案: ${critiqueResult.fixSuggestion}` : "",
+              "このまま保存する場合は、もう一度「投稿管理へ保存」を押してください。"
+            ].filter(Boolean).join("\n");
+            saveButton.parentElement?.insertBefore(summary, saveButton);
+            if (saveButton.dataset.qaConfirmed !== "1") {
+              saveButton.dataset.qaConfirmed = "1";
+              return;
+            }
+            saveButton.dataset.qaConfirmed = "";
+          }
+        }
+        addPost(record, saveButton.dataset.type || "AI生成");
         return;
       }
       const saveTextButton = event.target.closest("[data-save-text]");
