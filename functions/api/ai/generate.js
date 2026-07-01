@@ -86,7 +86,7 @@ export async function onRequestPost({ request, env }) {
 
     const now = new Date().toISOString();
     const posts = normalizeGeneratedPosts(feature, input, profile, output, now);
-    const qaResult = buildQaResultForGeneratedPosts(input, posts);
+    const qaResults = buildQaResultForGeneratedPosts(feature, input, posts, output);
     const historyId = crypto.randomUUID();
     await env.DB.prepare(`
       INSERT INTO generation_history (id, user_id, feature_key, input_json, output_json, created_at)
@@ -124,7 +124,8 @@ export async function onRequestPost({ request, env }) {
         reason: quality.reason
       },
       output,
-      qaResult
+      qaResults,
+      qaResult: qaResults[0]?.qaResult || null
     });
   } catch (error) {
     return openAiErrorResponse(error);
@@ -144,17 +145,43 @@ export async function applyNaturalRequestOrchestration(input, orchestrator = orc
   return input;
 }
 
-export function buildQaResultForGeneratedPosts(input = {}, posts = [], critic = critiqueGeneration) {
-  const postText = posts
+export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, posts = [], output = null, critic = critiqueGeneration) {
+  const sourcePosts = Array.isArray(output?.posts) ? output.posts : [];
+  const normalizedPosts = Array.isArray(posts) ? posts : [];
+  if (normalizedPosts.length && sourcePosts.length) {
+    return normalizedPosts.map((post, index) => {
+      const sourcePost = sourcePosts[index] || {};
+      const postText = [post.content, post.cta].filter(Boolean).join("\n");
+      const singleOutput = { ...output, posts: [sourcePost] };
+      return {
+        index,
+        qaResult: critic({
+          feature,
+          output: singleOutput,
+          postText,
+          expectedTone: input.tone,
+          expectedPostType: input.postType || input.type,
+          hasCTA: false
+        })
+      };
+    });
+  }
+
+  const postText = normalizedPosts
     .map((post) => [post.content, post.cta].filter(Boolean).join("\n"))
     .filter(Boolean)
     .join("\n\n");
-  return critic({
-    postText,
-    expectedTone: input.tone,
-    expectedPostType: input.postType || input.type,
-    hasCTA: false
-  });
+  return [{
+    index: 0,
+    qaResult: critic({
+      feature,
+      output,
+      postText,
+      expectedTone: input.tone,
+      expectedPostType: input.postType || input.type,
+      hasCTA: false
+    })
+  }];
 }
 
 async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {

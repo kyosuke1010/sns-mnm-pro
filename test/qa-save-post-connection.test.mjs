@@ -6,7 +6,7 @@ const generateStart = html.indexOf("async function generateWithServer");
 const generateEnd = html.indexOf("async function diagnoseWithServer");
 const generateWithServer = html.slice(generateStart, generateEnd);
 const flowStart = html.indexOf("const rawOutput = output.output || output;");
-const flowEnd = html.indexOf("if (isServerAiFeature(feature))", flowStart);
+const flowEnd = html.indexOf("if (target)", flowStart);
 const generationFlow = html.slice(flowStart, flowEnd);
 const saveStart = html.indexOf('const saveButton = event.target.closest("[data-save-post]");');
 const saveEnd = html.indexOf('const saveTextButton = event.target.closest("[data-save-text]");');
@@ -18,15 +18,26 @@ function ok(label) {
   console.log("  ✓ " + label);
 }
 
-function testServerQaResultIsCarriedToOutput() {
+function testServerQaResultsAreCarriedToOutput() {
+  assert.ok(generateWithServer.includes("qaResults: data.qaResults || []"));
   assert.ok(generateWithServer.includes("qaResult: data.qaResult"));
-  ok("generateWithServer carries server qaResult");
+  ok("generateWithServer carries server qaResults and legacy qaResult");
 }
 
-function testQaResultAttachedToGeneratedRecord() {
-  assert.ok(generationFlow.includes("generatedRecord.qaResult = output.qaResult"));
-  assert.ok(generationFlow.includes("generatedRecord.qaVerdict = output.qaResult.overallVerdict"));
-  ok("server qaResult is attached to generatedRecord before caching");
+function testQaResultsAttachedToGeneratedRecord() {
+  assert.ok(html.includes("function attachQaResultsToGeneratedRecord"));
+  assert.ok(generationFlow.includes("attachQaResultsToGeneratedRecord(generatedRecord, output.qaResults, output.qaResult)"));
+  assert.ok(html.includes("record.qaResults = items"));
+  assert.ok(html.includes("qaResult: childQa"));
+  assert.ok(html.includes("qaVerdict: childQa.overallVerdict"));
+  ok("server qaResults are attached to generatedRecord and children before caching");
+}
+
+function testRepresentativeQaResultKeepsExistingSaveFlow() {
+  assert.ok(html.includes("function representativeQaResult"));
+  assert.ok(html.includes("record.qaResult = critiqueResult"));
+  assert.ok(html.includes("record.qaVerdict = critiqueResult.overallVerdict"));
+  ok("representative qaResult keeps existing save flow compatible");
 }
 
 function testWindowCritiqueGenerationRemoved() {
@@ -52,8 +63,9 @@ function testWarnFailSummaryAndHumanOverride() {
 
 function main() {
   console.log("qa save-post connection tests");
-  testServerQaResultIsCarriedToOutput();
-  testQaResultAttachedToGeneratedRecord();
+  testServerQaResultsAreCarriedToOutput();
+  testQaResultsAttachedToGeneratedRecord();
+  testRepresentativeQaResultKeepsExistingSaveFlow();
   testWindowCritiqueGenerationRemoved();
   testSaveHandlerUsesExistingQaResultBeforeAddPost();
   testWarnFailSummaryAndHumanOverride();

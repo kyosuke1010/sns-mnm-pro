@@ -10,50 +10,103 @@ function ok(label) {
   console.log("  ✓ " + label);
 }
 
-function testBuildQaResultPassesExpectedPayload() {
-  let called = 0;
-  const result = buildQaResultForGeneratedPosts({
-    tone: "親しみやすい",
-    postType: "共感型"
+function testBuildQaResultRunsPerPostWithOutput() {
+  const calls = [];
+  const result = buildQaResultForGeneratedPosts("ai-post", {
+    tone: "friendly",
+    postType: "empathy"
   }, [
-    { content: "投稿本文1", cta: "自然な問い1" },
-    { content: "投稿本文2", cta: "" }
-  ], (payload) => {
-    called += 1;
-    assert.equal(payload.postText, "投稿本文1\n自然な問い1\n\n投稿本文2");
-    assert.equal(payload.expectedTone, "親しみやすい");
-    assert.equal(payload.expectedPostType, "共感型");
-    assert.equal(payload.hasCTA, false);
+    { content: "post one", cta: "soft question" },
+    { content: "post two", cta: "" }
+  ], {
+    posts: [
+      { body: "post one", cta: "soft question", self_check: { total: 42 } },
+      { body: "post two", cta: "", self_check: { total: 39 } }
+    ]
+  }, (payload) => {
+    calls.push(payload);
+    return { overallVerdict: "pass", results: [], total: payload.output.posts[0].self_check.total };
+  });
+
+  assert.equal(calls.length, 2);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].index, 0);
+  assert.equal(result[1].index, 1);
+  assert.equal(calls[0].output.posts.length, 1);
+  assert.equal(calls[0].output.posts[0].self_check.total, 42);
+  assert.equal(calls[1].output.posts[0].self_check.total, 39);
+  assert.equal(calls[0].postText, "post one\nsoft question");
+  assert.equal(calls[0].expectedTone, "friendly");
+  assert.equal(calls[0].expectedPostType, "empathy");
+  assert.equal(calls[0].hasCTA, false);
+  ok("buildQaResultForGeneratedPosts runs QA per post and passes output");
+}
+
+function testCrossPostDangerousCtaDoesNotBleedAcrossPosts() {
+  const result = buildQaResultForGeneratedPosts("ai-post", {}, [
+    { content: "action phrase stays in post one", cta: "" },
+    { content: "reward phrase stays in post two", cta: "" }
+  ], {
+    posts: [
+      { body: "action phrase stays in post one", cta: "", self_check: { total: 40 } },
+      { body: "reward phrase stays in post two", cta: "", self_check: { total: 40 } }
+    ]
+  }, (payload) => {
+    assert.ok(!payload.postText.includes("action phrase stays in post one\n\nreward phrase stays in post two"));
+    const hasBothPosts = payload.postText.includes("action phrase") && payload.postText.includes("reward phrase");
+    assert.equal(hasBothPosts, false);
+    return { overallVerdict: "pass", results: [{ item: "危険CTA", verdict: "pass" }] };
+  });
+
+  assert.equal(result.length, 2);
+  assert.notEqual(result[0].qaResult.results.find((item) => item.item === "危険CTA")?.verdict, "fail");
+  assert.notEqual(result[1].qaResult.results.find((item) => item.item === "危険CTA")?.verdict, "fail");
+  ok("cross-post CTA/reward words do not create a dangerous CTA fail");
+}
+
+function testRewriteFallsBackToSingleQaArray() {
+  const result = buildQaResultForGeneratedPosts("rewrite", {
+    tone: "logical",
+    postType: "brushup"
+  }, [], {
+    rewritten_post: "Rewritten post body",
+    self_check: { total: 41 }
+  }, (payload) => {
+    assert.equal(payload.feature, "rewrite");
+    assert.equal(payload.output.rewritten_post, "Rewritten post body");
     return { overallVerdict: "pass", results: [] };
   });
 
-  assert.equal(called, 1);
-  assert.equal(result.overallVerdict, "pass");
-  ok("buildQaResultForGeneratedPosts passes generated text and expectations to critiqueGeneration");
+  assert.equal(result.length, 1);
+  assert.equal(result[0].index, 0);
+  assert.equal(result[0].qaResult.overallVerdict, "pass");
+  ok("rewrite returns a single qaResults array item");
 }
 
 function testQaResultBuiltAfterGenerationBeforeInsert() {
   const runIndex = source.indexOf("let { output, quality, attempts } = await runGeneration");
-  const qaIndex = source.indexOf("const qaResult = buildQaResultForGeneratedPosts");
+  const qaIndex = source.indexOf("const qaResults = buildQaResultForGeneratedPosts");
   const insertIndex = source.indexOf("INSERT INTO generated_posts");
   assert.ok(runIndex > 0, "runGeneration call exists");
-  assert.ok(qaIndex > runIndex, "qaResult is built after runGeneration");
-  assert.ok(insertIndex > qaIndex, "generated_posts INSERT happens after qaResult");
-  ok("qaResult is built after generation and before generated_posts insert");
+  assert.ok(qaIndex > runIndex, "qaResults is built after runGeneration");
+  assert.ok(insertIndex > qaIndex, "generated_posts INSERT happens after qaResults");
+  ok("qaResults is built after generation and before generated_posts insert");
 }
 
-function testResponseIncludesQaResult() {
-  assert.ok(source.includes("qaResult"));
-  assert.ok(source.indexOf("qaResult") < source.lastIndexOf("Response.json"));
-  assert.ok(/output\s*,\s*qaResult/.test(source));
-  ok("Response.json includes qaResult");
+function testResponseIncludesQaResults() {
+  assert.ok(source.includes("qaResults"));
+  assert.ok(source.indexOf("qaResults") < source.lastIndexOf("Response.json"));
+  assert.ok(/output\s*,\s*qaResults/.test(source));
+  ok("Response.json includes qaResults");
 }
 
 function main() {
   console.log("ai generate QA connection tests");
-  testBuildQaResultPassesExpectedPayload();
+  testBuildQaResultRunsPerPostWithOutput();
+  testCrossPostDangerousCtaDoesNotBleedAcrossPosts();
+  testRewriteFallsBackToSingleQaArray();
   testQaResultBuiltAfterGenerationBeforeInsert();
-  testResponseIncludesQaResult();
+  testResponseIncludesQaResults();
   console.log(`\nAll ${passed} checks passed.`);
 }
 
