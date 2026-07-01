@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { orchestrateRequest } from "../functions/_lib/ai-request-orchestrator.js";
+import { applyNaturalRequestOrchestration } from "../functions/api/ai/generate.js";
 
 let passed = 0;
 function ok(label) {
@@ -77,6 +78,44 @@ async function testEmptyRequestFallsBackSafely() {
   ok("empty request returns a safe default generation plan");
 }
 
+async function testNaturalRequestModeCallsOrchestrator() {
+  let called = 0;
+  const input = { requestMode: "natural", userRequest: "今週のThreads投稿を5本作って", tone: "論理的" };
+  await applyNaturalRequestOrchestration(input, async ({ userRequest }) => {
+    called += 1;
+    assert.equal(userRequest, "今週のThreads投稿を5本作って");
+    return {
+      postCount: 5,
+      tone: "親しみやすい",
+      postType: "共感型",
+      featureKey: "bulk-generate",
+      ambiguities: ["target_not_explicit"]
+    };
+  });
+
+  assert.equal(called, 1);
+  assert.equal(input.postCount, 5);
+  assert.equal(input.tone, "親しみやすい");
+  assert.equal(input.postType, "共感型");
+  assert.equal(input.featureKey, "bulk-generate");
+  assert.deepEqual(input.orchestratorAmbiguities, ["target_not_explicit"]);
+  ok("natural request mode calls orchestrator and merges allowed fields");
+}
+
+async function testStructuredRequestDoesNotCallOrchestrator() {
+  let called = 0;
+  const input = { topic: "投稿ネタ切れ", tone: "論理的" };
+  await applyNaturalRequestOrchestration(input, async () => {
+    called += 1;
+    throw new Error("orchestrator should not be called");
+  });
+
+  assert.equal(called, 0);
+  assert.equal(input.tone, "論理的");
+  assert.equal(input.postCount, undefined);
+  ok("structured request skips orchestrator");
+}
+
 async function main() {
   console.log("ai-request-orchestrator tests");
   await testWeeklyFivePosts();
@@ -84,6 +123,8 @@ async function main() {
   await testSpecificFeatureRouting();
   await testProfileFallback();
   await testEmptyRequestFallsBackSafely();
+  await testNaturalRequestModeCallsOrchestrator();
+  await testStructuredRequestDoesNotCallOrchestrator();
   console.log(`\nAll ${passed} checks passed.`);
 }
 

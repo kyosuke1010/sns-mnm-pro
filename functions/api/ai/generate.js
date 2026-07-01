@@ -11,6 +11,7 @@ import { buildGenerationPrompt, buildDiagnosisPrompt, normalizeGenerationInput, 
 import { outputSchema } from "../../_lib/ai-schemas.js";
 import { evaluateGenerationQuality, retryInstruction } from "../../_lib/ai-quality.js";
 import { understandInput } from "../../_lib/ai-input-understanding-llm.js";
+import { orchestrateRequest } from "../../_lib/ai-request-orchestrator.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -31,6 +32,7 @@ export async function onRequestPost({ request, env }) {
     const rawProfile = body.profile && typeof body.profile === "object" ? body.profile : {};
     const profile = sanitizeProfileForGeneration(rawProfile);
     const model = modelConfig(settings.modelMode, env);
+    await applyNaturalRequestOrchestration(input);
 
     // Diagnosis features (viral score / AB compare) evaluate existing posts.
     // They do not run the generative quality loop and save no draft posts.
@@ -127,6 +129,17 @@ export async function onRequestPost({ request, env }) {
 }
 
 const DIAGNOSIS_FEATURES = new Set(["viral", "ab-test", "score", "buzz-pattern", "buzz-research"]);
+
+export async function applyNaturalRequestOrchestration(input, orchestrator = orchestrateRequest) {
+  if (!input || typeof input !== "object" || input.requestMode !== "natural") return input;
+  const orchestratorResult = await orchestrator({ userRequest: input.userRequest });
+  input.postCount = orchestratorResult.postCount;
+  input.tone = orchestratorResult.tone;
+  input.postType = orchestratorResult.postType;
+  input.featureKey = orchestratorResult.featureKey;
+  input.orchestratorAmbiguities = orchestratorResult.ambiguities || [];
+  return input;
+}
 
 async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {
   if (feature === "viral" && !String(input.post || "").trim()) {
