@@ -100,7 +100,8 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     JSON.stringify(context, null, 2),
     "",
     outputContract(feature),
-    extraInstruction || ""
+    extraInstruction || "",
+    options.voiceInstruction || ""
   ].filter(Boolean).join("\n");
 }
 

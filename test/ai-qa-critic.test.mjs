@@ -72,6 +72,80 @@ function testEmptyBodyFailsViaExistingAggregate() {
   ok("existing aggregate is converted into an overall fail verdict");
 }
 
+function testGenericQuestionEndingWarns() {
+  const result = critiqueGeneration({
+    postText: "AIで投稿を作る人が増えてきました。使い方を3つにまとめました。みなさんはどう思いますか？"
+  });
+  assert.equal(result.results.find((item) => item.item === "丸投げ質問締め").verdict, "warn");
+  ok("generic reader-directed question ending warns");
+}
+
+function testSelfIsolationQuestionDoesNotWarn() {
+  const result = critiqueGeneration({
+    postText: "AI投稿って綺麗すぎる。売り込み感も強い。これ、僕だけ？"
+  });
+  assert.equal(result.results.find((item) => item.item === "丸投げ質問締め").verdict, "pass");
+  ok("self-subject isolation question is not treated as generic ending");
+}
+
+function testKeigoOveruseWarnsWithProfile() {
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: "本日はご案内いたします。とても便利な機能です。ぜひご覧ください。よろしくお願いいたします。"
+  });
+  const keigo = result.results.find((item) => item.item === "敬語過多");
+  assert.ok(keigo, "ボイス指定時は敬語過多を計測");
+  assert.equal(keigo.verdict, "warn");
+  ok("keigo overuse warns when a voice profile is active");
+}
+
+function testKeigoNotMeasuredWithoutProfile() {
+  const result = critiqueGeneration({
+    postText: "本日はご案内いたします。とても便利な機能です。ぜひご覧ください。よろしくお願いいたします。"
+  });
+  assert.equal(result.results.find((item) => item.item === "敬語過多"), undefined);
+  ok("keigo overuse is not measured without a voice profile");
+}
+
+function testReachMissingWarnsWithProfile() {
+  // 脱線締めのみ・投稿のどこにも読者への問い/呼びかけが無いケース(1回目の実演相当)
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: [
+      "投稿ネタ切れるの、はや過ぎん？？".replace("？？", "。"), // 冒頭も疑問符なしにする
+      "工場でも一緒でな。毎回ゼロから手順考えてたら現場止まるやん。",
+      "……って言いつつ、さっき紅茶淹れすぎてカップから溢れさせてもうたわ。今日はこの話で許してｗ"
+    ].join("\n")
+  });
+  const reach = result.results.find((item) => item.item === "リーチ導線");
+  assert.ok(reach, "ボイス指定時はリーチ導線を計測");
+  assert.equal(reach.verdict, "warn");
+  ok("reach hook missing warns when voice profile is active and no invite exists");
+}
+
+function testReachPresentPassesWithProfile() {
+  // ガードレール適用後(2回目の実演)：中盤に具体的な問いを残したまま脱線締め
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: [
+      "投稿ネタ切れるの、はや過ぎん。",
+      "今の投稿、ネタ切れした日どうやって乗り切ってる？俺は人のボヤき見て拾ってるだけの日もあるわ。",
+      "……って言いつつ、さっき紅茶淹れすぎてカップから溢れさせてもうたわ。今日はこの話で許してｗ"
+    ].join("\n")
+  });
+  const reach = result.results.find((item) => item.item === "リーチ導線");
+  assert.equal(reach.verdict, "pass");
+  ok("reach hook placed mid-post passes even with a non-CTA (脱線締め) ending");
+}
+
+function testReachNotMeasuredWithoutProfile() {
+  const result = critiqueGeneration({
+    postText: "工場でも一緒でな。……って言いつつ紅茶こぼしてもうたわ。今日はこの話で許してｗ"
+  });
+  assert.equal(result.results.find((item) => item.item === "リーチ導線"), undefined);
+  ok("reach check is not measured without a voice profile");
+}
+
 function main() {
   console.log("ai-qa-critic tests");
   testCleanPostPassesMeasuredChecks();
@@ -79,6 +153,13 @@ function main() {
   testNaturalWantPhraseDoesNotFail();
   testSalesPressureWarns();
   testEmptyBodyFailsViaExistingAggregate();
+  testGenericQuestionEndingWarns();
+  testSelfIsolationQuestionDoesNotWarn();
+  testKeigoOveruseWarnsWithProfile();
+  testKeigoNotMeasuredWithoutProfile();
+  testReachMissingWarnsWithProfile();
+  testReachPresentPassesWithProfile();
+  testReachNotMeasuredWithoutProfile();
   console.log(`\nAll ${passed} checks passed.`);
 }
 
