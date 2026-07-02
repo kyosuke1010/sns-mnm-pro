@@ -107,6 +107,45 @@ function testKeigoNotMeasuredWithoutProfile() {
   ok("keigo overuse is not measured without a voice profile");
 }
 
+function testReachMissingWarnsWithProfile() {
+  // 脱線締めのみ・投稿のどこにも読者への問い/呼びかけが無いケース(1回目の実演相当)
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: [
+      "投稿ネタ切れるの、はや過ぎん？？".replace("？？", "。"), // 冒頭も疑問符なしにする
+      "工場でも一緒でな。毎回ゼロから手順考えてたら現場止まるやん。",
+      "……って言いつつ、さっき紅茶淹れすぎてカップから溢れさせてもうたわ。今日はこの話で許してｗ"
+    ].join("\n")
+  });
+  const reach = result.results.find((item) => item.item === "リーチ導線");
+  assert.ok(reach, "ボイス指定時はリーチ導線を計測");
+  assert.equal(reach.verdict, "warn");
+  ok("reach hook missing warns when voice profile is active and no invite exists");
+}
+
+function testReachPresentPassesWithProfile() {
+  // ガードレール適用後(2回目の実演)：中盤に具体的な問いを残したまま脱線締め
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: [
+      "投稿ネタ切れるの、はや過ぎん。",
+      "今の投稿、ネタ切れした日どうやって乗り切ってる？俺は人のボヤき見て拾ってるだけの日もあるわ。",
+      "……って言いつつ、さっき紅茶淹れすぎてカップから溢れさせてもうたわ。今日はこの話で許してｗ"
+    ].join("\n")
+  });
+  const reach = result.results.find((item) => item.item === "リーチ導線");
+  assert.equal(reach.verdict, "pass");
+  ok("reach hook placed mid-post passes even with a non-CTA (脱線締め) ending");
+}
+
+function testReachNotMeasuredWithoutProfile() {
+  const result = critiqueGeneration({
+    postText: "工場でも一緒でな。……って言いつつ紅茶こぼしてもうたわ。今日はこの話で許してｗ"
+  });
+  assert.equal(result.results.find((item) => item.item === "リーチ導線"), undefined);
+  ok("reach check is not measured without a voice profile");
+}
+
 function main() {
   console.log("ai-qa-critic tests");
   testCleanPostPassesMeasuredChecks();
@@ -118,6 +157,9 @@ function main() {
   testSelfIsolationQuestionDoesNotWarn();
   testKeigoOveruseWarnsWithProfile();
   testKeigoNotMeasuredWithoutProfile();
+  testReachMissingWarnsWithProfile();
+  testReachPresentPassesWithProfile();
+  testReachNotMeasuredWithoutProfile();
   console.log(`\nAll ${passed} checks passed.`);
 }
 
