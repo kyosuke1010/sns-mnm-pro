@@ -47,6 +47,7 @@ export function normalizeGenerationInput(feature, input = {}, profile = {}, opti
     platform,
     tone,
     tone_profile: toneProfile,
+    dialect: normalizeDialect(input.dialect || profile.dialect),
     post_type: postType,
     post_type_profile: postTypeProfile,
     post_count: count,
@@ -86,6 +87,8 @@ export function buildGenerationPrompt(feature, input, profile, extraInstruction 
     featurePrompt(feature),
     "",
     tonePrompt(context),
+    "",
+    dialectPrompt(context),
     "",
     postTypePrompt(context),
     "",
@@ -336,6 +339,8 @@ function commonSystemPrompt() {
     "- A real person on Threads does not read polite ですます copy like a newscaster. Default to frank, spoken Japanese with personality.",
     "- For friendly / energetic / supportive tones, lean fully into casual spoken endings (〜だよね / 〜やん / 〜のよ / 〜しちゃう / 〜なんだ / 〜だわ / 〜してる), light laughter (笑 / www) where it fits, and a clear personal opinion. Do not keep every sentence in polite ですます.",
     "- Show real emotion in plain words (うれしい / しんどい / 正直 / マジで / ガチで). Add a metaphor, a small joke, light self-deprecation, or a playful jab when it fits the moment.",
+    "- Actually crack a joke — don't just be 'lightly humorous'. A real punchline, a dumb aside, or a self-roast lands harder than a safe quip.",
+    "- Let raw emotion out at real spikes. On a failure, shock, or surprise, an exaggerated outburst reads as deeply human: 「ぐわー！！！😂」「ありえへん、、、、😭」「は？ってなったwww」「むりむりむり🫠」. Repeated punctuation (！！！ / 、、、、) and 😂😭 at a genuine emotional peak are welcome — they are the OPPOSITE of AI-smell. Use them at the actual peak, not decoratively, and only when the tone is casual/friendly.",
     "- Kill ふんわりした抽象表現 (vague, safe, generic phrasing). Say the specific, slightly opinionated thing a real human would actually say. A concrete experience with a real number beats a polished generality.",
     "- Use emoji only when the tone is casual AND the profile does not say 使わない; then use them sparingly and naturally (☺️ 🥹 😎 ✨ 🫶), never one on every line.",
     "- For logical / professional / concise tones, stay measured — but still sound like a real human with a viewpoint, never like corporate copy.",
@@ -358,6 +363,12 @@ function commonSystemPrompt() {
     "- A numbered ①②③ checklist is ONE option, not a requirement. Many of the strongest posts are pure prose with no list and no 👇. Do not put a list in every candidate.",
     "- Do not invent a generic time-of-day scene (「夜の22:30、〜しながらスマホで」) just to sound concrete. A real opinion, a real example, or a real name is more concrete than a fake scene.",
     "- Vary openings, structure, scene, and ending genuinely between candidates. If two candidates share the same shape, rewrite one of them.",
+    "",
+    "ANTI-TEMPLATE STRUCTURE (the deepest AI-smell hides in shape, not words — kill these):",
+    "- The contrastive-reframe construction 「Xじゃなくて、(本当は)Yなんだよね」/「Aではなく、Bだ」/「〜と思ってたけど、実は〜」is THE single most common AI 共感-post tell. Do not use it as the spine of a post, and never in more than one candidate out of a set. Most of the time the more human move is to just say the messy thing straight, with no neat pivot.",
+    "- Do NOT resolve a post into a tidy, quotable life-lesson or maxim. Endings like 「結局〜なんだと思う」「大事なのは〜だけ」「〜するほうが結局うまくいく」read as generated. Real people often end without resolution — on an unresolved feeling, a half-joke, or a blunt specific question. A slightly unresolved ending is MORE human than a balanced takeaway.",
+    "- Do not over-balance or over-explain. A real post can be lopsided: one vivid, oddly specific detail (例:「Threadsを3周しただけで降りた」「3日連続でこれ」) and almost no lesson. One concrete messy detail beats a neat insight. Resist tying both sides together.",
+    "- The closing question must be specific and self-implicating, never a survey. Ban generic crowd-survey closers like 「みんな、〜どうしてる？」「あなたはどうですか？」. Prefer a question that carries a specific scene or a self-deprecating admission (例:「『明日こそやる』を3日言ってる人、おる？」).",
     "",
     "CONCRETENESS WITH REAL NAMES:",
     "- When the topic involves tools, apps, AI, services, books, or products, name specific real examples by their real name (ChatGPT, Claude, Gemini, Perplexity, NotebookLM, Copilot, Canva, Notion, …) instead of the vague words 'AI' or 'ツール'. Concrete names read as written by a real user.",
@@ -472,6 +483,26 @@ function tonePrompt(context) {
     `Sales intensity: ${tone.sales}`,
     `Vocabulary tendency: ${tone.vocabulary.join(", ")}`,
     "Apply this tone to the actual writing, not only to the ending."
+  ].join("\n");
+}
+
+// Dialect axis (標準語 / 関西弁 …), orthogonal to tone. Kansai reads very human
+// because its endings and rhythm break the AI register on their own.
+function normalizeDialect(value) {
+  const v = String(value || "").trim();
+  if (/関西|大阪|kansai/i.test(v)) return "関西弁";
+  return "標準語";
+}
+
+function dialectPrompt(context) {
+  if (context.dialect !== "関西弁") return "";
+  return [
+    "DIALECT: 関西弁 (Kansai-ben).",
+    "Write the post in natural, everyday Kansai-ben — the way a real Osaka-area person actually posts, not a stereotyped comedy routine.",
+    "Use Kansai endings and vocabulary where they fall naturally: 〜やん / 〜やねん / 〜やで / 〜やろ / 〜へん / 〜てもうた / 〜ちゃう / 〜んねん / 〜なぁ, ほんま / めっちゃ / なんでやねん / しんどい / ええ / あかん.",
+    "Do NOT force every single sentence into dialect or pile on 「〜でっせ」「〜まんがな」old-man clichés. A real speaker mixes; keep it modern and effortless.",
+    "Keep the meaning, target, tone, and post type exactly as specified — only the spoken surface becomes Kansai.",
+    "Closing questions also go Kansai (例:「みんなどうしてる？」ではなく「みんなどうしてる？…って気になるねんけど、どう？」/「〜な人おる？」)."
   ].join("\n");
 }
 

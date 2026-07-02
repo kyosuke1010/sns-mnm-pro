@@ -70,6 +70,12 @@ export function retryInstruction(quality) {
   if (objective.includes("meta_explanation")) {
     objectiveLines.push("- The body described what the tool does (e.g. 「〜余白を作ります」「会話導線を設計します」). The body must BE the post itself. Remove every process/meta sentence and write only what the reader would see.");
   }
+  if (objective.includes("reframe_template")) {
+    objectiveLines.push("- The body leaned on the AI cliché reframe 「Xじゃなくて、(実は)Yなんだよね」. Drop the neat pivot and just say the messy thing straight, with no balanced contrast.");
+  }
+  if (objective.includes("tidy_maxim")) {
+    objectiveLines.push("- The body ended on a tidy quotable life-lesson (例:「結局〜なんだと思う」「大事なのは〜だけ」). End instead on an unresolved feeling, a half-joke, or a blunt specific question — do not wrap it up neatly.");
+  }
   return [
     "",
     "REGENERATION REQUIRED:",
@@ -135,10 +141,22 @@ export function inspectGeneratedText(text = "") {
     flags.push("taigen_overuse");
   }
 
+  // 6. reframe テンプレ: the「Xじゃなくて、(実は)Yなんだよね」contrastive-reframe — the single most
+  //    common AI 共感-post tell. Precise: require the negation pivot AND a reflective softener
+  //    ending nearby, so plain「コーヒーじゃなくて紅茶」does not trip it.
+  const reframeTemplate = /(んじゃなくて|のではなく|ではなくて|じゃなくて)[、,]?\s*(?:たぶん|きっと|本当は|ほんとは|実は|むしろ)?[^。\n]{0,30}(なんだよね|んだと思う|なんだと思う|なのかも|だけ(?:なんだ|なの)|気がする)/;
+  if (reframeTemplate.test(body)) flags.push("reframe_template");
+
+  // 7. お利口な教訓オチ: tidy quotable life-lesson / maxim ending. Checked only on the tail.
+  const tidyMaxim = /(結局[^。\n]{0,20}(進む|うまくいく|早い|変わる|だと思う|なんだと思う)|大事なのは[^。\n]{0,15}だけ|大切なのは[^。\n]{0,15}だけ|ほうが結局|だけなんだと思う|なんだと思います)/;
+  if (tidyMaxim.test(tail)) flags.push("tidy_maxim");
+
   const hardFail = flags.includes("bait")
     || flags.includes("generic_ending")
     || flags.includes("meta_explanation")
     || flags.includes("taigen_overuse")
+    || flags.includes("reframe_template")
+    || flags.includes("tidy_maxim")
     || (flags.includes("no_concrete_anchor") && flags.includes("flat_rhythm"));
   return { flags, hardFail, concreteAnchor, rhythmVaried };
 }
