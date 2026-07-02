@@ -91,6 +91,16 @@ export function buildVoiceInstruction(profile, { dialect = "kansai", postType = 
     for (const f of fingerprints) lines.push(`- ${f}`);
   }
 
+  // GUARDRAIL: このボイスは締め方の"スタイル"を変えるだけで、リーチ導線の"有無"は変えない。
+  // 脱線締め/ノリツッコミ締め等を選んだ回でも、指示のどこかで save/reply/follow への
+  // 自然な導線（具体的な締めの質問、または軽い共感の呼びかけ）を必ず残すこと。
+  // これが無いと「本人っぽいが誰にも刺さらない投稿」になり、フォロー導線が死ぬ。
+  lines.push("");
+  lines.push("VOICE DOES NOT REPLACE REACH — critical:");
+  lines.push("- Everything above (persona/register/temperature/fingerprints) changes HOW this person talks. It does NOT remove the base prompt's requirement for a natural save/reply/profile path or a specific closing question.");
+  lines.push("- If the assigned fingerprint is a non-CTA ending (脱線締め, ノリツッコミ締め, 造語圧縮, etc.), place the reach hook (a concrete question, an invitation to relate, or a soft product mention) EARLIER in the post — then let the fingerprint close the post afterward as atmosphere, not as the only payoff.");
+  lines.push("- A post that sounds exactly like 紅茶王子 but gives the reader nothing to reply/save/follow for has failed its job. Voice and reach are both required, not a trade-off.");
+
   // 禁止リスト
   if (profile.forbidden?.length) {
     lines.push("");
