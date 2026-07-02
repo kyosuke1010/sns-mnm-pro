@@ -15,7 +15,8 @@ export const PHASE1_FEATURE_LABELS = {
   "ab-test": "投稿AB比較",
   score: "見込み客スコア",
   "buzz-pattern": "自然会話パターン分析",
-  "buzz-research": "トーク自然発生テーマ"
+  "buzz-research": "トーク自然発生テーマ",
+  "reply-assist": "リプ支援（管理者専用）"
 };
 
 export function normalizeGenerationInput(feature, input = {}, profile = {}, options = {}) {

@@ -15,6 +15,8 @@ import { orchestrateRequest } from "../../_lib/ai-request-orchestrator.js";
 import { critiqueGeneration } from "../../_lib/ai-qa-critic.js";
 import { getVoiceProfile } from "../../_lib/voice-profiles.js";
 import { buildVoiceInstruction } from "../../_lib/voice-injector.js";
+import { requireAdminUser } from "../../_lib/auth.js";
+import { buildReplyPrompt, replySchema } from "../../_lib/reply-assist.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -35,6 +37,17 @@ export async function onRequestPost({ request, env }) {
     const rawProfile = body.profile && typeof body.profile === "object" ? body.profile : {};
     const profile = sanitizeProfileForGeneration(rawProfile);
     const model = modelConfig(settings.modelMode, env);
+
+    // Admin-only reply-assist mode. Reply text is fundamentally different from a
+    // post (short, context-matched, zero promotion), so it bypasses the standard
+    // understand→generate→quality-retry pipeline (built around the post schema)
+    // and uses its own prompt + the existing per-item QA critic instead.
+    // /api/ai/generate is not under /api/admin/*, so the admin check is explicit here.
+    if (feature === "reply-assist") {
+      await requireAdminUser(env, request);
+      return await handleReplyAssist({ input, profile, apiKey: settings.apiKey, model });
+    }
+
     await applyNaturalRequestOrchestration(input);
 
     // Diagnosis features (viral score / AB compare) evaluate existing posts.
@@ -200,6 +213,44 @@ export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, 
       hasCTA: false
     })
   }];
+}
+
+async function handleReplyAssist({ input, profile, apiKey, model }) {
+  const targetPost = String(input.targetPost || "").trim();
+  if (!targetPost) {
+    throw new OpenAiSafeError("AI_INPUT_MISSING", "返信したい投稿文を入力してください", 400);
+  }
+
+  const prompt = buildReplyPrompt({
+    targetPost,
+    stance: input.stance,
+    dialect: input.dialect || profile.dialect || "",
+    voiceProfileId: input.voiceProfileId || profile.voiceProfileId || ""
+  });
+
+  const response = await callOpenAiResponses({
+    apiKey,
+    model: model.model,
+    reasoning: model.reasoning,
+    verbosity: model.verbosity,
+    input: prompt,
+    schema: replySchema,
+    maxOutputTokens: 1200
+  });
+  const output = parseJsonOutput(response.text);
+  const candidates = Array.isArray(output?.replies) ? output.replies : [];
+
+  const replies = candidates.map((candidate) => ({
+    text: String(candidate?.text || "").trim(),
+    approach: String(candidate?.approach || "").trim(),
+    qaResult: critiqueGeneration({
+      feature: "reply-assist",
+      postText: String(candidate?.text || ""),
+      voiceProfileId: input.voiceProfileId || profile.voiceProfileId || ""
+    })
+  }));
+
+  return Response.json({ ok: true, replies });
 }
 
 async function handleDiagnosis({ env, user, feature, input, profile, apiKey, model }) {
