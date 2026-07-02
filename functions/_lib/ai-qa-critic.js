@@ -45,7 +45,8 @@ export function critiqueGeneration({
   output = null,
   postText = "",
   expectedTone = "",
-  expectedPostType = ""
+  expectedPostType = "",
+  voiceProfileId = ""
 } = {}) {
   const normalizedOutput = output || buildOutputFromText(postText);
   const quality = evaluateGenerationQuality(feature, normalizedOutput);
@@ -56,6 +57,9 @@ export function critiqueGeneration({
     templateResult(quality, objective, text),
     dangerousCtaResult(text),
     salesPressureResult(text),
+    genericQuestionEndingResult(text),
+    // 敬語過多はボイス指定時のみ計測（指定なしの生成では敬語は正常なので項目自体を出さない＝後方互換）
+    ...(voiceProfileId ? [keigoOveruseResult(text)] : []),
     unmeasuredResult("投稿タイプ一致", expectedPostType, "MVP-Bでは意味比較ロジック未接続。既存集約からは判定できないため未計測。"),
     unmeasuredResult("口調一致", expectedTone, "MVP-Bではトーン意味比較ロジック未接続。既存集約からは判定できないため未計測。")
   ];
@@ -157,6 +161,53 @@ function salesPressureResult(text) {
       ? `強い販売語が含まれる可能性: ${hits.join(", ")}`
       : "小規模検出では販売圧は強くない",
     measuredBy: "small_regex_check"
+  };
+}
+
+// 検出器: 丸投げ質問締め（最終文が読者への汎用質問で終わる）。
+// 「これ、僕だけ？」「みんなそう思わへん？」のような自分主語の孤立確認・同意求めは
+// 指紋であって丸投げではないため除外する。最終文のみを対象にする。
+function genericQuestionEndingResult(text) {
+  const body = String(text || "").trim();
+  const lines = body.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  const lastLine = lines[lines.length - 1] || "";
+  const parts = lastLine.split(/(?<=[。！？!?])/).map((s) => s.trim()).filter(Boolean);
+  const lastSentence = parts[parts.length - 1] || lastLine;
+
+  const isQuestion = /[？?]\s*$/.test(lastSentence);
+  // 自分主語の孤立確認・同意求め・軽い自問 → 除外（指紋）
+  const selfOrAgreement = /(僕|私|俺|自分|わたし|ぼく)だけ|みんな(も)?そう?思|そう思わ|おる[？?]|いる[？?]|いない[？?]|かな[？?]\s*$/.test(lastSentence);
+  // 読者への汎用丸投げ（明確なものだけ）
+  const generic = /(どう思います|どう思われ|いかがでしょう|いかがですか|ではないでしょうか|ではないだろうか|あなたはどう|皆さんはどう|みなさんはどう|どうでしょうか|どうですか[？?]\s*$)/.test(lastSentence)
+    || /あなたは[^、。\n]{0,20}(です|ます)か[？?]\s*$/.test(lastSentence);
+
+  const hit = isQuestion && generic && !selfOrAgreement;
+  return {
+    item: "丸投げ質問締め",
+    verdict: hit ? WARN : PASS,
+    reason: hit ? `最終文が読者への丸投げ質問: 「${lastSentence}」` : "丸投げ質問締めは検出なし（自分主語の孤立確認は許容）",
+    measuredBy: "final_sentence_check"
+  };
+}
+
+// 検出器: 敬語過多。文末が敬語の文が全体の70%以上なら warn。
+// ボイスプロファイル指定時のみ結果に含める（呼び出し側でゲート。指定なしでは敬語は正常）。
+function keigoOveruseResult(text) {
+  const sentences = String(text || "")
+    .split(/[。\n！？!?]/)
+    .map((s) => s.replace(/[」』）)\]】、,…・\s　]+$/u, "").trim())
+    .filter(Boolean);
+  if (sentences.length < 3) {
+    return { item: "敬語過多", verdict: PASS, reason: "文数が少なく判定対象外", measuredBy: "keigo_ratio" };
+  }
+  const keigo = sentences.filter((s) => /(です|ます|でしょうか|でしょう|ました|ません|ください|いたします|ございます|致します)$/.test(s)).length;
+  const ratio = keigo / sentences.length;
+  const hit = ratio >= 0.7;
+  return {
+    item: "敬語過多",
+    verdict: hit ? WARN : PASS,
+    reason: hit ? `敬語文末が${Math.round(ratio * 100)}%（ボイスの人格が敬語で潰れている可能性）` : "敬語過多なし",
+    measuredBy: "keigo_ratio"
   };
 }
 

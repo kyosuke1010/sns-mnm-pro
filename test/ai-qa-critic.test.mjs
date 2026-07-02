@@ -72,6 +72,41 @@ function testEmptyBodyFailsViaExistingAggregate() {
   ok("existing aggregate is converted into an overall fail verdict");
 }
 
+function testGenericQuestionEndingWarns() {
+  const result = critiqueGeneration({
+    postText: "AIで投稿を作る人が増えてきました。使い方を3つにまとめました。みなさんはどう思いますか？"
+  });
+  assert.equal(result.results.find((item) => item.item === "丸投げ質問締め").verdict, "warn");
+  ok("generic reader-directed question ending warns");
+}
+
+function testSelfIsolationQuestionDoesNotWarn() {
+  const result = critiqueGeneration({
+    postText: "AI投稿って綺麗すぎる。売り込み感も強い。これ、僕だけ？"
+  });
+  assert.equal(result.results.find((item) => item.item === "丸投げ質問締め").verdict, "pass");
+  ok("self-subject isolation question is not treated as generic ending");
+}
+
+function testKeigoOveruseWarnsWithProfile() {
+  const result = critiqueGeneration({
+    voiceProfileId: "kocha-ouji",
+    postText: "本日はご案内いたします。とても便利な機能です。ぜひご覧ください。よろしくお願いいたします。"
+  });
+  const keigo = result.results.find((item) => item.item === "敬語過多");
+  assert.ok(keigo, "ボイス指定時は敬語過多を計測");
+  assert.equal(keigo.verdict, "warn");
+  ok("keigo overuse warns when a voice profile is active");
+}
+
+function testKeigoNotMeasuredWithoutProfile() {
+  const result = critiqueGeneration({
+    postText: "本日はご案内いたします。とても便利な機能です。ぜひご覧ください。よろしくお願いいたします。"
+  });
+  assert.equal(result.results.find((item) => item.item === "敬語過多"), undefined);
+  ok("keigo overuse is not measured without a voice profile");
+}
+
 function main() {
   console.log("ai-qa-critic tests");
   testCleanPostPassesMeasuredChecks();
@@ -79,6 +114,10 @@ function main() {
   testNaturalWantPhraseDoesNotFail();
   testSalesPressureWarns();
   testEmptyBodyFailsViaExistingAggregate();
+  testGenericQuestionEndingWarns();
+  testSelfIsolationQuestionDoesNotWarn();
+  testKeigoOveruseWarnsWithProfile();
+  testKeigoNotMeasuredWithoutProfile();
   console.log(`\nAll ${passed} checks passed.`);
 }
 

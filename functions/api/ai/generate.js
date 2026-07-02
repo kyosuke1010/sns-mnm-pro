@@ -13,6 +13,8 @@ import { evaluateGenerationQuality, retryInstruction } from "../../_lib/ai-quali
 import { understandInput } from "../../_lib/ai-input-understanding-llm.js";
 import { orchestrateRequest } from "../../_lib/ai-request-orchestrator.js";
 import { critiqueGeneration } from "../../_lib/ai-qa-critic.js";
+import { getVoiceProfile } from "../../_lib/voice-profiles.js";
+import { buildVoiceInstruction } from "../../_lib/voice-injector.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -56,6 +58,8 @@ export async function onRequestPost({ request, env }) {
       }));
     }
     const genOptions = { inputUnderstanding: understanding };
+    const voiceInstruction = buildVoiceInstructionForInput(input, profile);
+    if (voiceInstruction) genOptions.voiceInstruction = voiceInstruction;
     const context = normalizeGenerationInput(feature, input, profile, genOptions);
     const schema = outputSchema(feature);
     const maxOutputTokens = outputTokenBudget(feature, input);
@@ -145,6 +149,18 @@ export async function applyNaturalRequestOrchestration(input, orchestrator = orc
   return input;
 }
 
+// ボイスプロファイル注入（薄い結線）。input.voiceProfileId があるときだけ、
+// 該当プロファイル + 既存の dialect(#14) + 投稿タイプ から注入文字列を作る。
+// 無ければ "" を返し、生成は完全に既存動作のまま（後方互換）。
+export function buildVoiceInstructionForInput(input = {}, profile = {}) {
+  const voiceProfile = getVoiceProfile(input?.voiceProfileId);
+  if (!voiceProfile) return "";
+  return buildVoiceInstruction(voiceProfile, {
+    dialect: input.dialect || profile.dialect || "",
+    postType: input.postType || input.type || input.post_type || input.purpose || ""
+  });
+}
+
 export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, posts = [], output = null, critic = critiqueGeneration) {
   const sourcePosts = Array.isArray(output?.posts) ? output.posts : [];
   const normalizedPosts = Array.isArray(posts) ? posts : [];
@@ -161,6 +177,7 @@ export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, 
           postText,
           expectedTone: input.tone,
           expectedPostType: input.postType || input.type,
+          voiceProfileId: input.voiceProfileId,
           hasCTA: false
         })
       };
@@ -179,6 +196,7 @@ export function buildQaResultForGeneratedPosts(feature = "ai-post", input = {}, 
       postText,
       expectedTone: input.tone,
       expectedPostType: input.postType || input.type,
+      voiceProfileId: input.voiceProfileId,
       hasCTA: false
     })
   }];
