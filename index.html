@@ -3458,6 +3458,19 @@
             <div class="result-box" id="testEmailResult" style="display:none"></div>
             <div class="actions" style="margin-top:6px"><button class="ghost-btn" type="button" id="emailDomainsBtn">🔍 このキーが見えるドメインを確認</button><span class="muted" id="emailDomainsStatus"></span></div>
             <div class="result-box" id="emailDomainsResult" style="display:none"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>リプ支援（管理者専用）</h2><p>他者の投稿への自然な返信案を3案生成します。投稿はしません。コピーして手動でThreadsに貼ってください。</p></div><span class="pill">管理者</span></div>
+            <div class="notice">Threads APIへの書き込みは行いません。生成された案は必ず自分の目で確認してから使ってください。</div>
+            <div class="form-grid">
+              <label>相手の投稿文<textarea id="replyAssistTarget" placeholder="返信したい相手の投稿をそのまま貼り付け"></textarea></label>
+            </div>
+            <div class="actions" style="margin-top:6px">
+              <button class="ghost-btn" type="button" data-reply-stance="empathy">共感</button>
+              <button class="ghost-btn" type="button" data-reply-stance="tsukkomi">ツッコミ</button>
+              <button class="ghost-btn" type="button" data-reply-stance="insight">ひと言インサイト</button>
+            </div>
+            <div class="result-box" id="replyAssistResult" style="display:none"></div>
           </section>` : ""}
           <section class="panel">
             <div class="panel-head"><div><h2>Threads API連携設定</h2><p>Liteプラン以上でフォロワー数管理に利用します。無料トライアルでは接続テストのみ利用できます。</p></div><span class="pill">${threadsConnectAvailable() ? threadsConnectionLabel() : "順次開放"}</span></div>
@@ -5237,6 +5250,45 @@
         } finally {
           emailDomainsBtn.disabled = false;
         }
+      });
+      document.querySelectorAll("[data-reply-stance]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const targetPost = document.querySelector("#replyAssistTarget")?.value || "";
+          const box = document.querySelector("#replyAssistResult");
+          if (!targetPost.trim()) {
+            showToast("相手の投稿文を貼り付けてください");
+            return;
+          }
+          btn.disabled = true;
+          if (box) { box.style.display = "block"; box.innerHTML = `<div class="muted">生成中…</div>`; }
+          try {
+            const data = await apiFetchJson("/api/ai/generate", {
+              method: "POST",
+              body: JSON.stringify({
+                feature: "reply-assist",
+                input: { targetPost, stance: btn.dataset.replyStance, dialect: state.profile.dialect || "" }
+              })
+            });
+            const cards = (data.replies || []).map((r, i) => {
+              const qa = r.qaResult;
+              const warnItems = (qa?.results || []).filter((item) => item.verdict === "warn" || item.verdict === "fail");
+              const qaHtml = warnItems.length
+                ? `<div class="notice">QA: ${warnItems.map((item) => `${esc(item.item)}(${esc(item.verdict)})`).join(" / ")}</div>`
+                : "";
+              return `<div class="result-box" style="margin-top:8px">
+                <div class="muted">案${i + 1}・${esc(r.approach || "")}</div>
+                <div style="margin:6px 0">${esc(r.text)}</div>
+                ${qaHtml}
+                <button class="small-btn" type="button" data-copy-text="${esc(r.text)}">コピー</button>
+              </div>`;
+            }).join("");
+            if (box) box.innerHTML = cards || `<div class="muted">生成結果がありませんでした</div>`;
+          } catch (error) {
+            if (box) box.innerHTML = `<div class="muted">${esc(safeApiMessage(error, "生成に失敗しました"))}</div>`;
+          } finally {
+            btn.disabled = false;
+          }
+        });
       });
       const apiTest = document.querySelector("#testApiBtn");
       if (apiTest) apiTest.addEventListener("click", async () => {
