@@ -153,7 +153,7 @@ export async function applyNaturalRequestOrchestration(input, orchestrator = orc
 // 該当プロファイル + 既存の dialect(#14) + 投稿タイプ から注入文字列を作る。
 // 無ければ "" を返し、生成は完全に既存動作のまま（後方互換）。
 export function buildVoiceInstructionForInput(input = {}, profile = {}) {
-  const voiceProfile = getVoiceProfile(input?.voiceProfileId);
+  const voiceProfile = getVoiceProfile(input?.voiceProfileId || profile?.voiceProfileId);
   if (!voiceProfile) return "";
   return buildVoiceInstruction(voiceProfile, {
     dialect: input.dialect || profile.dialect || "",
